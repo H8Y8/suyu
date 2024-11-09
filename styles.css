@@ -344,7 +344,7 @@ body {
     border-radius: 10px;
 }
 
-/* 在桌面���隱藏手機版的排行榜容器和按鈕 */
+/* 在桌面隱藏手機版的排行榜容器和按鈕 */
 .leaderboard-container {
     display: none;  /* 完全隱藏手機版容器 */
 }
