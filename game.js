@@ -73,6 +73,19 @@ class Game {
                     : '隱藏排行榜 ▼';
             });
         }
+
+        this.isLocalMode = true;
+        this.localLeaderboard = [];
+        this.onlineLeaderboard = [];
+        
+        // 初始化切換按鈕
+        this.initLeaderboardSwitches();
+        
+        // 載入本地排行榜
+        this.loadLocalLeaderboard();
+        
+        // 開始監聽線上排行榜
+        this.startOnlineLeaderboardListener();
     }
 
     initializeCanvas() {
@@ -306,21 +319,28 @@ class Game {
     // 修改提交分數方法
     async submitScore() {
         const playerName = this.playerNameInput.value.trim() || '匿名玩家';
-        const newScore = {
+        const scoreEntry = {
             player_name: playerName,
             score: this.score,
             play_date: new Date().toISOString()
         };
 
+        // 儲存到本地
+        this.localLeaderboard.push({...scoreEntry});
+        this.localLeaderboard.sort((a, b) => b.score - a.score);
+        this.localLeaderboard = this.localLeaderboard.slice(0, 5);
+        localStorage.setItem('gameLeaderboard', JSON.stringify(this.localLeaderboard));
+
+        // 儲存到線上
         try {
-            // 修改推送新分數到 Firebase 的方式
-            await push(this.leaderboardRef, newScore);
+            await push(ref(this.database, 'leaderboard'), scoreEntry);
         } catch (error) {
-            console.error('Error saving score:', error);
+            console.error('Error saving online score:', error);
         }
 
         this.nameInputModal.classList.add('hidden');
         this.playerNameInput.value = '';
+        this.displayLeaderboard();
     }
 
     // 顯示排行榜
@@ -328,11 +348,15 @@ class Game {
         const desktopList = document.getElementById('leaderboard-list');
         const mobileList = document.getElementById('leaderboard-list-mobile');
         
+        const currentLeaderboard = this.isLocalMode ? 
+            this.localLeaderboard.slice(0, 5) : 
+            this.onlineLeaderboard;
+
         const updateList = (list) => {
             if (!list) return;
             list.innerHTML = '';
             
-            this.leaderboard.forEach((entry, index) => {
+            currentLeaderboard.forEach((entry, index) => {
                 const li = document.createElement('li');
                 const date = new Date(entry.play_date);
                 const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
@@ -347,9 +371,60 @@ class Game {
             });
         };
 
-        // 更新兩個排行榜
         updateList(desktopList);
         updateList(mobileList);
+    }
+
+    initLeaderboardSwitches() {
+        // 桌面版切換按鈕
+        const localBtn = document.getElementById('local-btn');
+        const onlineBtn = document.getElementById('online-btn');
+        
+        // 手機版切換按鈕
+        const localBtnMobile = document.getElementById('local-btn-mobile');
+        const onlineBtnMobile = document.getElementById('online-btn-mobile');
+
+        const switchButtons = [
+            [localBtn, onlineBtn],
+            [localBtnMobile, onlineBtnMobile]
+        ];
+
+        switchButtons.forEach(([localButton, onlineButton]) => {
+            if (localButton && onlineButton) {
+                localButton.addEventListener('click', () => {
+                    this.isLocalMode = true;
+                    localButton.classList.add('active');
+                    onlineButton.classList.remove('active');
+                    this.displayLeaderboard();
+                });
+
+                onlineButton.addEventListener('click', () => {
+                    this.isLocalMode = false;
+                    onlineButton.classList.add('active');
+                    localButton.classList.remove('active');
+                    this.displayLeaderboard();
+                });
+            }
+        });
+    }
+
+    loadLocalLeaderboard() {
+        const saved = localStorage.getItem('gameLeaderboard');
+        this.localLeaderboard = saved ? JSON.parse(saved) : [];
+    }
+
+    startOnlineLeaderboardListener() {
+        const leaderboardRef = ref(this.database, 'leaderboard');
+        onValue(leaderboardRef, (snapshot) => {
+            this.onlineLeaderboard = [];
+            snapshot.forEach((childSnapshot) => {
+                this.onlineLeaderboard.push(childSnapshot.val());
+            });
+            this.onlineLeaderboard.sort((a, b) => b.score - a.score);
+            if (!this.isLocalMode) {
+                this.displayLeaderboard();
+            }
+        });
     }
 }
 
