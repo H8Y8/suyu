@@ -7,12 +7,13 @@ class Game {
         this.timeLeft = 30.0;
         this.isPlaying = false;
         this.particles = [];
-        this.leaderboard = [];
+        this.isLocalMode = true;
+        this.localLeaderboard = [];
+        this.onlineLeaderboard = [];
 
         // 獲取 DOM 元素
         this.gameArea = document.getElementById('game-area');
         this.scoreElement = document.getElementById('score');
-        this.timerElement = document.getElementById('timer');
         this.startButton = document.getElementById('start-button');
         this.hitSound = document.getElementById('hit-sound');
         this.countdownElement = document.getElementById('countdown');
@@ -25,13 +26,10 @@ class Game {
         this.difficulty = { value: 'hard' };
         this.difficultySettings = {
             hard: { 
-                moveInterval: 470,
+                moveInterval: 490,
                 points: 15 
             }
         };
-
-        // 設置 API 基礎 URL
-        this.apiBaseUrl = 'http://localhost/你的專案目錄'; // 根據實際情況修改
 
         // 初始化 canvas
         this.initializeCanvas();
@@ -39,45 +37,6 @@ class Game {
         // 初始化計時器顯示
         this.initializeCountdownTimer();
 
-        // 添加事件監聽器
-        this.addEventListeners();
-
-        // 修改 Firebase 資料庫初始化
-        this.database = getDatabase();
-        this.leaderboardRef = ref(this.database, 'leaderboard');
-        
-        // 修改監聽排行榜變化
-        const leaderboardQuery = query(
-            this.leaderboardRef,
-            orderByChild('score'),
-            limitToLast(5)
-        );
-        
-        onValue(leaderboardQuery, (snapshot) => {
-            this.updateLeaderboard(snapshot);
-        });
-
-        // 修改排行榜切換按鈕事件監聽
-        const toggleBtn = document.getElementById('toggle-leaderboard');
-        const mobileLeaderboard = document.querySelector('.mobile-leaderboard');
-        const startButton = document.getElementById('start-button');
-        
-        if (toggleBtn && mobileLeaderboard) {
-            toggleBtn.addEventListener('click', () => {
-                mobileLeaderboard.classList.toggle('collapsed');
-                // 切換開始按鈕的顯示狀態
-                startButton.classList.toggle('hidden-mobile');
-                
-                toggleBtn.textContent = mobileLeaderboard.classList.contains('collapsed') 
-                    ? '顯示排行榜 ▲' 
-                    : '隱藏排行榜 ▼';
-            });
-        }
-
-        this.isLocalMode = true;
-        this.localLeaderboard = [];
-        this.onlineLeaderboard = [];
-        
         // 初始化切換按鈕
         this.initLeaderboardSwitches();
         
@@ -86,6 +45,9 @@ class Game {
         
         // 開始監聽線上排行榜
         this.startOnlineLeaderboardListener();
+
+        // 添加事件監聽器
+        this.addEventListeners();
     }
 
     initializeCanvas() {
@@ -107,10 +69,59 @@ class Game {
         this.gameArea.appendChild(this.countdownTimerElement);
     }
 
+    initLeaderboardSwitches() {
+        // 桌面版切換按鈕
+        const localBtn = document.getElementById('local-btn');
+        const onlineBtn = document.getElementById('online-btn');
+        
+        // 手機版切換按鈕
+        const localBtnMobile = document.getElementById('local-btn-mobile');
+        const onlineBtnMobile = document.getElementById('online-btn-mobile');
+
+        const switchButtons = [
+            [localBtn, onlineBtn],
+            [localBtnMobile, onlineBtnMobile]
+        ];
+
+        switchButtons.forEach(([localButton, onlineButton]) => {
+            if (localButton && onlineButton) {
+                localButton.addEventListener('click', () => {
+                    this.isLocalMode = true;
+                    localButton.classList.add('active');
+                    onlineButton.classList.remove('active');
+                    this.displayLeaderboard();
+                });
+
+                onlineButton.addEventListener('click', () => {
+                    this.isLocalMode = false;
+                    onlineButton.classList.add('active');
+                    localButton.classList.remove('active');
+                    this.displayLeaderboard();
+                });
+            }
+        });
+    }
+
     addEventListeners() {
         this.startButton.addEventListener('click', () => this.startGame());
         this.submitScoreButton.addEventListener('click', () => this.submitScore());
         window.addEventListener('resize', () => this.resizeCanvas());
+
+        // 手機版排行榜切換按鈕
+        const toggleBtn = document.getElementById('toggle-leaderboard');
+        const mobileLeaderboard = document.querySelector('.mobile-leaderboard');
+        const startButton = document.getElementById('start-button');
+        
+        if (toggleBtn && mobileLeaderboard) {
+            toggleBtn.addEventListener('click', () => {
+                mobileLeaderboard.classList.toggle('collapsed');
+                startButton.classList.toggle('hidden-mobile');
+                
+                toggleBtn.textContent = mobileLeaderboard.classList.contains('collapsed') 
+                    ? '顯示排行榜 ▲' 
+                    : '隱藏排行榜 ▼';
+            });
+        }
     }
 
     async startGame() {
@@ -143,7 +154,6 @@ class Game {
         this.gameTimer = setInterval(() => {
             this.timeLeft -= 0.1;
             const displayTime = Math.max(0, Math.round(this.timeLeft * 10) / 10);
-            
             this.countdownTimerElement.textContent = displayTime.toFixed(1);
             
             if (this.timeLeft <= 0) {
@@ -168,19 +178,12 @@ class Game {
         const maxX = this.gameArea.clientWidth - 65;
         const maxY = this.gameArea.clientHeight - 65;
         
-        target.style.opacity = '0';
         target.style.left = Math.random() * maxX + 'px';
         target.style.top = Math.random() * maxY + 'px';
 
         target.addEventListener('click', () => this.hitTarget(target));
         
         this.gameArea.appendChild(target);
-        
-        requestAnimationFrame(() => {
-            target.style.transition = 'opacity 0.2s ease';
-            target.style.opacity = '1';
-        });
-
         this.moveTarget(target);
     }
 
@@ -194,14 +197,8 @@ class Game {
             const maxX = this.gameArea.clientWidth - 65;
             const maxY = this.gameArea.clientHeight - 65;
             
-            target.style.opacity = '0';
-            target.style.transition = 'none';
             target.style.left = Math.random() * maxX + 'px';
             target.style.top = Math.random() * maxY + 'px';
-            
-            target.offsetHeight;
-            target.style.transition = 'opacity 0.2s ease';
-            target.style.opacity = '1';
         }, this.difficultySettings.hard.moveInterval);
     }
 
@@ -217,6 +214,7 @@ class Game {
         
         target.remove();
         this.createParticles(x, y);
+        
         this.hitSound.currentTime = 0;
         this.hitSound.play();
         
@@ -301,22 +299,25 @@ class Game {
         this.nameInputModal.classList.remove('hidden');
     }
 
-    // 更新排行榜顯示
-    updateLeaderboard(snapshot) {
-        const leaderboardData = [];
-        snapshot.forEach((childSnapshot) => {
-            leaderboardData.push(childSnapshot.val());
-        });
-        
-        // 排序並反轉，使最高分在前
-        this.leaderboard = leaderboardData
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 5);
-            
-        this.displayLeaderboard();
+    loadLocalLeaderboard() {
+        const saved = localStorage.getItem('gameLeaderboard');
+        this.localLeaderboard = saved ? JSON.parse(saved) : [];
     }
 
-    // 修改提交分數方法
+    startOnlineLeaderboardListener() {
+        const leaderboardRef = ref(this.database, 'leaderboard');
+        onValue(leaderboardRef, (snapshot) => {
+            this.onlineLeaderboard = [];
+            snapshot.forEach((childSnapshot) => {
+                this.onlineLeaderboard.push(childSnapshot.val());
+            });
+            this.onlineLeaderboard.sort((a, b) => b.score - a.score);
+            if (!this.isLocalMode) {
+                this.displayLeaderboard();
+            }
+        });
+    }
+
     async submitScore() {
         const playerName = this.playerNameInput.value.trim() || '匿名玩家';
         const scoreEntry = {
@@ -343,7 +344,6 @@ class Game {
         this.displayLeaderboard();
     }
 
-    // 顯示排行榜
     displayLeaderboard() {
         const desktopList = document.getElementById('leaderboard-list');
         const mobileList = document.getElementById('leaderboard-list-mobile');
@@ -374,64 +374,9 @@ class Game {
         updateList(desktopList);
         updateList(mobileList);
     }
-
-    initLeaderboardSwitches() {
-        // 桌面版切換按鈕
-        const localBtn = document.getElementById('local-btn');
-        const onlineBtn = document.getElementById('online-btn');
-        
-        // 手機版切換按鈕
-        const localBtnMobile = document.getElementById('local-btn-mobile');
-        const onlineBtnMobile = document.getElementById('online-btn-mobile');
-
-        const switchButtons = [
-            [localBtn, onlineBtn],
-            [localBtnMobile, onlineBtnMobile]
-        ];
-
-        switchButtons.forEach(([localButton, onlineButton]) => {
-            if (localButton && onlineButton) {
-                localButton.addEventListener('click', () => {
-                    this.isLocalMode = true;
-                    localButton.classList.add('active');
-                    onlineButton.classList.remove('active');
-                    this.displayLeaderboard();
-                });
-
-                onlineButton.addEventListener('click', () => {
-                    this.isLocalMode = false;
-                    onlineButton.classList.add('active');
-                    localButton.classList.remove('active');
-                    this.displayLeaderboard();
-                });
-            }
-        });
-    }
-
-    loadLocalLeaderboard() {
-        const saved = localStorage.getItem('gameLeaderboard');
-        this.localLeaderboard = saved ? JSON.parse(saved) : [];
-    }
-
-    startOnlineLeaderboardListener() {
-        const leaderboardRef = ref(this.database, 'leaderboard');
-        onValue(leaderboardRef, (snapshot) => {
-            this.onlineLeaderboard = [];
-            snapshot.forEach((childSnapshot) => {
-                this.onlineLeaderboard.push(childSnapshot.val());
-            });
-            this.onlineLeaderboard.sort((a, b) => b.score - a.score);
-            if (!this.isLocalMode) {
-                this.displayLeaderboard();
-            }
-        });
-    }
-}
-
-// 修改初始化方式
-export function initGame() {
-    const game = new Game();
 }
 
 // 等待 DOM 完全加載後再初始化遊戲
-document.addEventListener('DOMContentLoaded', initGame);
+document.addEventListener('DOMContentLoaded', () => {
+    const game = new Game();
+});
