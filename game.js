@@ -116,7 +116,7 @@ class Game {
         const existingTargets = this.gameArea.querySelectorAll('.target');
         existingTargets.forEach(target => target.remove());
         
-        this.startButton.disabled = true;
+        this.startButton.style.display = 'none';
         
         if (!this.gameArea.contains(this.canvas)) {
             this.gameArea.appendChild(this.canvas);
@@ -195,6 +195,8 @@ class Game {
     hitTarget(target) {
         if (!this.isPlaying) return;
         
+        target.style.pointerEvents = 'none';
+        
         const rect = target.getBoundingClientRect();
         const gameAreaRect = this.gameArea.getBoundingClientRect();
         const x = rect.left + rect.width / 2 - gameAreaRect.left;
@@ -210,7 +212,7 @@ class Game {
         
         setTimeout(() => {
             this.spawnTarget();
-        }, 100);
+        }, 50);
     }
 
     createParticles(x, y) {
@@ -280,7 +282,7 @@ class Game {
         const existingTargets = this.gameArea.querySelectorAll('.target');
         existingTargets.forEach(target => target.remove());
         
-        this.startButton.disabled = false;
+        this.startButton.style.display = 'block';
         
         this.finalScoreElement.textContent = this.score;
         this.nameInputModal.classList.remove('hidden');
