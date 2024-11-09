@@ -25,7 +25,7 @@ class Game {
         this.difficulty = { value: 'hard' };
         this.difficultySettings = {
             hard: { 
-                moveInterval: 500,
+                moveInterval: 350,
                 points: 15 
             }
         };
