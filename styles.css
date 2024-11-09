@@ -191,7 +191,7 @@ body {
         bottom: 80px;
         left: 50%;
         transform: translateX(-50%);
-        z-index: 999;
+        z-index: 98;
         padding: 12px 30px;
         font-size: 18px;
         border-radius: 25px;
@@ -218,6 +218,54 @@ body {
     .input-group input {
         width: 80%;
         margin: 5px 0;
+    }
+
+    /* 調整開始按鈕位置和層級 */
+    #start-button {
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 98;
+        padding: 12px 30px;
+        font-size: 18px;
+        border-radius: 25px;
+        background: linear-gradient(145deg, #4CAF50, #45a049);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    /* 提高排行榜容器的層級 */
+    .leaderboard-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 9999;
+    }
+
+    /* 確保排行榜內容也有較高的層級 */
+    .mobile-leaderboard {
+        position: relative;
+        z-index: 9999;
+        padding: 10px;
+        max-height: 50vh;
+        overflow-y: auto;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* 確保切換按鈕也有較高的層級 */
+    .toggle-leaderboard-btn {
+        position: relative;
+        z-index: 9999;
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(145deg, #4CAF50, #45a049);
+        color: white;
+        border: none;
+        border-radius: 10px 10px 0 0;
+        font-weight: bold;
     }
 }
 
