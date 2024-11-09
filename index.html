@@ -39,7 +39,13 @@
 
         <!-- 桌面版排行榜 -->
         <div class="leaderboard desktop-leaderboard">
-            <h2>排行榜</h2>
+            <div class="leaderboard-header">
+                <h2>排行榜</h2>
+                <div class="leaderboard-switch">
+                    <button id="local-btn" class="switch-btn active">本地</button>
+                    <button id="online-btn" class="switch-btn">線上</button>
+                </div>
+            </div>
             <ol id="leaderboard-list">
             </ol>
         </div>
@@ -47,13 +53,19 @@
         <button id="start-button">開始遊戲</button>
     </div>
 
-    <!-- 將手機版排行榜移到 game-container 外面 -->
+    <!-- 手機版排行榜 -->
     <div class="leaderboard-container">
         <button id="toggle-leaderboard" class="toggle-leaderboard-btn">
             顯示排行榜 ▲
         </button>
         <div class="leaderboard mobile-leaderboard collapsed">
-            <h2>排行榜</h2>
+            <div class="leaderboard-header">
+                <h2>排行榜</h2>
+                <div class="leaderboard-switch">
+                    <button id="local-btn-mobile" class="switch-btn active">本地</button>
+                    <button id="online-btn-mobile" class="switch-btn">線上</button>
+                </div>
+            </div>
             <ol id="leaderboard-list-mobile">
             </ol>
         </div>
