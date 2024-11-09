@@ -186,17 +186,12 @@ body {
         padding: 0;
     }
 
-    #leaderboard-list li {
-        padding: 5px 0;
-        font-size: 14px;
-    }
-
     #start-button {
         position: fixed;
         bottom: 80px;
         left: 50%;
         transform: translateX(-50%);
-        z-index: 1001;
+        z-index: 999;
         padding: 12px 30px;
         font-size: 18px;
         border-radius: 25px;
