@@ -267,6 +267,11 @@ body {
         border-radius: 10px 10px 0 0;
         font-weight: bold;
     }
+
+    /* 添加開始按鈕隱藏的樣式 */
+    #start-button.hidden-mobile {
+        display: none;
+    }
 }
 
 .countdown-timer {
@@ -339,7 +344,7 @@ body {
     border-radius: 10px;
 }
 
-/* 在桌面版隱藏手機版的排行榜容器和按鈕 */
+/* 在桌面���隱藏手機版的排行榜容器和按鈕 */
 .leaderboard-container {
     display: none;  /* 完全隱藏手機版容器 */
 }
