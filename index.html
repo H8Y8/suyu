@@ -26,27 +26,28 @@
             <!-- suyu 頭像會在這裡動態生成 -->
         </div>
 
-        <!-- 修改排行榜部分 -->
+        <!-- 桌面版排行榜 -->
         <div class="leaderboard desktop-leaderboard">
             <h2>排行榜</h2>
             <ol id="leaderboard-list">
             </ol>
         </div>
 
-        <!-- 手機版排行榜 -->
-        <div class="leaderboard-container">
-            <button id="toggle-leaderboard" class="toggle-leaderboard-btn">
-                顯示排行榜 ▲
-            </button>
-            <div class="leaderboard mobile-leaderboard collapsed">
-                <h2>排行榜</h2>
-                <ol id="leaderboard-list-mobile">
-                </ol>
-            </div>
-        </div>
-
         <button id="start-button">開始遊戲</button>
     </div>
+
+    <!-- 將手機版排行榜移到 game-container 外面 -->
+    <div class="leaderboard-container">
+        <button id="toggle-leaderboard" class="toggle-leaderboard-btn">
+            顯示排行榜 ▲
+        </button>
+        <div class="leaderboard mobile-leaderboard collapsed">
+            <h2>排行榜</h2>
+            <ol id="leaderboard-list-mobile">
+            </ol>
+        </div>
+    </div>
+
     <audio id="hit-sound" src="god.mp3" preload="auto"></audio>
 
     <div id="name-input-modal" class="modal hidden">
@@ -54,7 +55,7 @@
             <h2>遊戲結束！</h2>
             <p>你的得分：<span id="final-score"></span></p>
             <div class="input-group">
-                <label for="player-name">請輸入你的名字</label>
+                <label for="player-name">請輸入你的名字：</label>
                 <input type="text" id="player-name" maxlength="10">
             </div>
             <button id="submit-score">提交分數</button>
