@@ -1,6 +1,7 @@
 {
   "name": "孫叔追逐戰",
   "short_name": "孫叔追逐",
+  "version": "1.0.1",
   "icons": [
     {
       "src": "favicon.png",
@@ -13,7 +14,7 @@
       "type": "image/png"
     }
   ],
-  "start_url": "/",
+  "start_url": "/?v=1.0.1",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000"
