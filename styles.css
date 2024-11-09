@@ -1,0 +1,626 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: #000;
+    font-family: Arial, sans-serif;
+}
+
+.game-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.game-info {
+    display: flex;
+    justify-content: space-between;
+    color: white;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+#game-area {
+    width: 100%;
+    height: 400px;
+    background: #000;
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.target {
+    position: absolute;
+    width: 65px;
+    height: 65px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+}
+
+.target img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+}
+
+.leaderboard {
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 10px;
+}
+
+#start-button {
+    display: block;
+    margin: 20px auto;
+    padding: 10px 20px;
+    font-size: 18px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#start-button:hover {
+    background: #45a049;
+}
+
+.difficulty-selector {
+    margin-bottom: 20px;
+    color: white;
+}
+
+#difficulty {
+    padding: 5px 10px;
+    font-size: 16px;
+    border-radius: 5px;
+}
+
+.countdown {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 100px;
+    color: white;
+    z-index: 100;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.input-group {
+    margin: 20px 0;
+}
+
+.input-group input {
+    padding: 5px 10px;
+    font-size: 16px;
+    margin-left: 10px;
+}
+
+.hidden {
+    display: none;
+}
+
+@media screen and (max-width: 768px) {
+    .game-container {
+        max-width: 100%;
+        margin: 5px;
+        padding: 5px;
+        position: relative;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .game-info {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    #game-area {
+        height: 60vh;
+        width: 95vw;
+        margin: 0 auto;
+        margin-bottom: 80px;
+    }
+
+    .leaderboard-container {
+        display: block;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+    }
+
+    .toggle-leaderboard-btn {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px 5px 0 0;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .leaderboard {
+        padding: 10px;
+        max-height: 50vh;
+        overflow-y: auto;
+        transition: max-height 0.3s ease;
+    }
+
+    .leaderboard.collapsed {
+        max-height: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    #leaderboard-list {
+        margin: 0;
+        padding: 0;
+    }
+
+    #leaderboard-list li {
+        padding: 5px 0;
+        font-size: 14px;
+    }
+
+    #start-button {
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1001;
+        padding: 12px 30px;
+        font-size: 18px;
+        border-radius: 25px;
+        background: linear-gradient(145deg, #4CAF50, #45a049);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .target {
+        width: 60px;
+        height: 60px;
+    }
+
+    .countdown-timer {
+        font-size: 60px;
+    }
+
+    .modal-content {
+        width: 90%;
+        margin: 0 10px;
+        font-size: 14px;
+    }
+
+    .input-group input {
+        width: 80%;
+        margin: 5px 0;
+    }
+}
+
+.countdown-timer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 120px;
+    color: rgba(255, 255, 255, 0.3);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.particle-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+#leaderboard-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+#leaderboard-list li:last-child {
+    border-bottom: none;
+}
+
+#leaderboard-list .rank {
+    width: 80px;
+    font-weight: bold;
+}
+
+#leaderboard-list .name {
+    width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#leaderboard-list .score {
+    width: 80px;
+    color: #e44d26;
+    font-weight: bold;
+}
+
+#leaderboard-list .difficulty {
+    width: 60px;
+    color: #4CAF50;
+}
+
+#leaderboard-list .date {
+    width: 120px;
+    color: #666;
+    font-size: 0.9em;
+}
+
+/* 桌面版的排行榜樣式 */
+.leaderboard {
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 10px;
+}
+
+/* 在桌面版隱藏手機版的排行榜容器和按鈕 */
+.leaderboard-container {
+    display: none;  /* 完全隱藏手機版容器 */
+}
+
+.toggle-leaderboard-btn {
+    display: none;  /* 完全隱藏切換按鈕 */
+}
+
+/* 手機版的樣式 */
+@media screen and (max-width: 768px) {
+    /* ... 其他手機版樣式保持不變 ... */
+
+    /* 在手機版顯示排行榜容器和按鈕 */
+    .leaderboard-container {
+        display: block;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+    }
+
+    .toggle-leaderboard-btn {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px 5px 0 0;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    /* 在手機版隱藏原本的排行榜 */
+    .leaderboard:not(.collapsed) {
+        display: block;
+    }
+
+    .mobile-leaderboard {
+        padding: 10px;
+        max-height: 50vh;
+        overflow-y: auto;
+        transition: max-height 0.3s ease;
+    }
+
+    /* 確保收起狀態時完全隱藏 */
+    .mobile-leaderboard.collapsed {
+        max-height: 0;
+        overflow: hidden;
+        padding: 0;
+        margin: 0;
+        border: none;
+    }
+} 
+
+/* 桌面版排行榜 */
+.desktop-leaderboard {
+    display: block;
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 10px;
+}
+
+/* 手機版排行榜容器（預設隱藏） */
+.leaderboard-container {
+    display: none;
+}
+
+/* 手機版樣式 */
+@media screen and (max-width: 768px) {
+    /* 隱藏桌面版排行榜 */
+    .desktop-leaderboard {
+        display: none !important;  /* 強制隱藏 */
+    }
+
+    /* 顯示手機版排行榜容器 */
+    .leaderboard-container {
+        display: block;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+
+    .toggle-leaderboard-btn {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px 5px 0 0;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .mobile-leaderboard {
+        padding: 10px;
+        max-height: 50vh;
+        overflow-y: auto;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .mobile-leaderboard.collapsed {
+        max-height: 0 !important;
+        padding: 0 !important;
+        overflow: hidden;
+        border: none;
+    }
+
+    /* ... 其他手機版樣式保持不變 ... */
+} 
+
+/* 桌面版排行榜樣式 */
+.desktop-leaderboard {
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 10px;
+}
+
+/* 手機版按鈕預設隱藏 */
+.leaderboard-container .toggle-leaderboard-btn {
+    display: none;
+}
+
+/* 手機版樣式 */
+@media screen and (max-width: 768px) {
+    /* 排行榜容器樣式 */
+    .leaderboard-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+
+    /* 顯示切換按鈕 */
+    .leaderboard-container .toggle-leaderboard-btn {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px 5px 0 0;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    /* 排行榜樣式 */
+    .desktop-leaderboard {
+        margin: 0;
+        padding: 10px;
+        max-height: 50vh;
+        overflow-y: auto;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /* 收起狀態 */
+    .desktop-leaderboard.collapsed {
+        max-height: 0;
+        padding: 0;
+        overflow: hidden;
+        border: none;
+    }
+
+    /* 調整排行榜內容樣式 */
+    .desktop-leaderboard h2 {
+        margin: 0 0 10px 0;
+        font-size: 18px;
+    }
+
+    #leaderboard-list {
+        margin: 0;
+        padding: 0;
+        font-size: 14px;
+    }
+
+    #leaderboard-list li {
+        padding: 5px 0;
+    }
+} 
+
+/* 手機版排行榜樣式 */
+@media screen and (max-width: 768px) {
+    /* ... 其他手機版樣式保持不變 ... */
+
+    .leaderboard-container {
+        display: block;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+
+    .toggle-leaderboard-btn {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(145deg, #4CAF50, #45a049);
+        color: white;
+        border: none;
+        border-radius: 10px 10px 0 0;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+        transition: background-color 0.3s ease;
+    }
+
+    .toggle-leaderboard-btn:active {
+        background: linear-gradient(145deg, #45a049, #4CAF50);
+    }
+
+    .mobile-leaderboard {
+        padding: 15px;
+        max-height: 50vh;
+        overflow-y: auto;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1);
+        border-radius: 15px 15px 0 0;
+        transition: all 0.3s ease;
+    }
+
+    .mobile-leaderboard h2 {
+        margin: 0 0 15px 0;
+        color: #333;
+        font-size: 20px;
+        text-align: center;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .mobile-leaderboard #leaderboard-list-mobile {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .mobile-leaderboard #leaderboard-list-mobile li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 10px;
+        margin-bottom: 8px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease;
+    }
+
+    .mobile-leaderboard #leaderboard-list-mobile li:last-child {
+        margin-bottom: 0;
+    }
+
+    .mobile-leaderboard #leaderboard-list-mobile li:active {
+        transform: scale(0.98);
+    }
+
+    .mobile-leaderboard .rank {
+        font-weight: bold;
+        color: #4CAF50;
+        min-width: 70px;
+    }
+
+    .mobile-leaderboard .name {
+        flex: 1;
+        margin: 0 10px;
+        color: #333;
+        font-weight: 500;
+    }
+
+    .mobile-leaderboard .score {
+        color: #e44d26;
+        font-weight: bold;
+        min-width: 80px;
+        text-align: right;
+    }
+
+    .mobile-leaderboard .date {
+        color: #666;
+        font-size: 0.8em;
+        min-width: 100px;
+        text-align: right;
+    }
+
+    /* 收起狀態的動畫 */
+    .mobile-leaderboard.collapsed {
+        max-height: 0;
+        padding: 0;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    /* 調整開始按鈕位置，避免被排行榜遮擋 */
+    #start-button {
+        position: fixed;
+        bottom: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1001;
+        padding: 12px 30px;
+        font-size: 18px;
+        border-radius: 25px;
+        background: linear-gradient(145deg, #4CAF50, #45a049);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    #start-button:active {
+        transform: translateX(-50%) scale(0.95);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+} 

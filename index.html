@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>孫叔追逐戰</title>
+    
+    <!-- 修改 favicon 設置 -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+    
+    <link rel="stylesheet" href="styles.css">
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-info">
+            <div class="score">分數: <span id="score">0</span></div>
+        </div>
+        
+        <div id="countdown" class="countdown hidden">3</div>
+        <div id="game-area">
+            <!-- suyu 頭像會在這裡動態生成 -->
+        </div>
+
+        <!-- 修改排行榜部分 -->
+        <div class="leaderboard desktop-leaderboard">
+            <h2>排行榜</h2>
+            <ol id="leaderboard-list">
+            </ol>
+        </div>
+
+        <!-- 手機版排行榜 -->
+        <div class="leaderboard-container">
+            <button id="toggle-leaderboard" class="toggle-leaderboard-btn">
+                顯示排行榜 ▲
+            </button>
+            <div class="leaderboard mobile-leaderboard collapsed">
+                <h2>排行榜</h2>
+                <ol id="leaderboard-list-mobile">
+                </ol>
+            </div>
+        </div>
+
+        <button id="start-button">開始遊戲</button>
+    </div>
+    <audio id="hit-sound" src="god.mp3" preload="auto"></audio>
+
+    <div id="name-input-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>遊戲結束！</h2>
+            <p>你的得分：<span id="final-score"></span></p>
+            <div class="input-group">
+                <label for="player-name">請輸入你的名字</label>
+                <input type="text" id="player-name" maxlength="10">
+            </div>
+            <button id="submit-score">提交分數</button>
+        </div>
+    </div>
+
+    <script type="module" src="game.js"></script>
+</body>
+</html> 
