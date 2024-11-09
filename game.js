@@ -25,7 +25,7 @@ class Game {
         this.difficulty = { value: 'hard' };
         this.difficultySettings = {
             hard: { 
-                moveInterval: 550,
+                moveInterval: 570,
                 points: 15 
             }
         };
@@ -60,10 +60,14 @@ class Game {
         // 修改排行榜切換按鈕事件監聽
         const toggleBtn = document.getElementById('toggle-leaderboard');
         const mobileLeaderboard = document.querySelector('.mobile-leaderboard');
+        const startButton = document.getElementById('start-button');
         
         if (toggleBtn && mobileLeaderboard) {
             toggleBtn.addEventListener('click', () => {
                 mobileLeaderboard.classList.toggle('collapsed');
+                // 切換開始按鈕的顯示狀態
+                startButton.classList.toggle('hidden-mobile');
+                
                 toggleBtn.textContent = mobileLeaderboard.classList.contains('collapsed') 
                     ? '顯示排行榜 ▲' 
                     : '隱藏排行榜 ▼';
