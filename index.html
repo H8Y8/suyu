@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>孫叔追逐戰</title>
     
-    <!-- 完整的 favicon 設置 -->
+    <!-- 圓形 favicon 設置 -->
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
     <link rel="apple-touch-icon" sizes="152x152" href="favicon.png">
@@ -50,27 +50,26 @@
             </ol>
         </div>
 
+        <!-- 手機版排行榜 -->
+        <div class="leaderboard-container">
+            <button id="toggle-leaderboard" class="toggle-leaderboard-btn">
+                顯示排行榜 ▲
+            </button>
+            <div class="leaderboard mobile-leaderboard collapsed">
+                <div class="leaderboard-header">
+                    <h2>排行榜</h2>
+                    <div class="leaderboard-switch">
+                        <button id="local-btn-mobile" class="switch-btn active">本地</button>
+                        <button id="online-btn-mobile" class="switch-btn">線上</button>
+                    </div>
+                </div>
+                <ol id="leaderboard-list-mobile">
+                </ol>
+            </div>
+        </div>
+
         <button id="start-button">開始遊戲</button>
     </div>
-
-    <!-- 手機版排行榜 -->
-    <div class="leaderboard-container">
-        <button id="toggle-leaderboard" class="toggle-leaderboard-btn">
-            顯示排行榜 ▲
-        </button>
-        <div class="leaderboard mobile-leaderboard collapsed">
-            <div class="leaderboard-header">
-                <h2>排行榜</h2>
-                <div class="leaderboard-switch">
-                    <button id="local-btn-mobile" class="switch-btn active">本地</button>
-                    <button id="online-btn-mobile" class="switch-btn">線上</button>
-                </div>
-            </div>
-            <ol id="leaderboard-list-mobile">
-            </ol>
-        </div>
-    </div>
-
     <audio id="hit-sound" src="god.mp3" preload="auto"></audio>
 
     <div id="name-input-modal" class="modal hidden">
