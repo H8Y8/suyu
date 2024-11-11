@@ -383,21 +383,27 @@ class Game {
       this.handleGameAreaClick.bind(this)
     );
 
-    // 重置連���相關數據和顯示
+    // 重置連擊相關數據和顯示
     this.combo = 0;
     this.lastHitTime = 0;
     this.comboDisplay.classList.add("hidden");
     this.comboDisplay.style.animation = "none";
 
-    // 檢查排行榜是否展開
-    const mobileLeaderboard = document.querySelector(".mobile-leaderboard");
-    if (
-      mobileLeaderboard &&
-      !mobileLeaderboard.classList.contains("collapsed")
-    ) {
+    // 檢查是否為手機版
+    if (window.innerWidth <= 768) {
+      // 在手機版中，保持開始按鈕隱藏
       this.startButton.style.display = "none";
     } else {
-      this.startButton.style.display = "block";
+      // 在桌面版中，檢查排行榜狀態
+      const mobileLeaderboard = document.querySelector(".mobile-leaderboard");
+      if (
+        mobileLeaderboard &&
+        !mobileLeaderboard.classList.contains("collapsed")
+      ) {
+        this.startButton.style.display = "none";
+      } else {
+        this.startButton.style.display = "block";
+      }
     }
 
     // 計算命中率
@@ -463,6 +469,23 @@ class Game {
 
     this.nameInputModal.classList.add("hidden");
     this.playerNameInput.value = "";
+
+    // 檢查是否為手機版
+    if (window.innerWidth <= 768) {
+      // 檢查排行榜是否展開
+      const mobileLeaderboard = document.querySelector(".mobile-leaderboard");
+      if (
+        mobileLeaderboard &&
+        !mobileLeaderboard.classList.contains("collapsed")
+      ) {
+        this.startButton.style.display = "none";
+      } else {
+        this.startButton.style.display = "block";
+      }
+    } else {
+      this.startButton.style.display = "block";
+    }
+
     this.displayLeaderboard();
   }
 
@@ -568,26 +591,3 @@ class Game {
       this.comboDisplay.offsetHeight; // 觸發重排
       this.comboDisplay.style.animation = "comboPopup 0.5s ease";
     } else {
-      this.comboDisplay.classList.add("hidden");
-    }
-  }
-
-  // 處理遊戲區域點擊
-  handleGameAreaClick(event) {
-    if (!this.isPlaying) return;
-
-    // 只有在點擊不是目標時才增加總點擊數
-    // 因為目標的點擊會在 hitTarget 中處理
-    if (!event.target.closest(".target")) {
-      this.totalClicks++;
-    }
-  }
-}
-
-// 修改初始化方式
-export function initGame() {
-  const game = new Game();
-}
-
-// 等待 DOM 完全加載後再初始化遊戲
-document.addEventListener("DOMContentLoaded", initGame);
