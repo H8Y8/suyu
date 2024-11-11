@@ -33,7 +33,7 @@ class Game {
     this.difficulty = { value: "hard" };
     this.difficultySettings = {
       hard: {
-        moveInterval: 500,
+        moveInterval: 550,
         points: 15,
       },
     };
@@ -71,14 +71,17 @@ class Game {
     const startButton = document.getElementById("start-button");
 
     if (toggleBtn && mobileLeaderboard) {
-      toggleBtn.addEventListener("click", () => {
-        mobileLeaderboard.classList.toggle("collapsed");
+      let isCollapsed = true; // 追蹤排行榜狀態
 
-        // 切換開始按鈕的顯示狀態
-        if (mobileLeaderboard.classList.contains("collapsed")) {
+      toggleBtn.addEventListener("click", () => {
+        isCollapsed = !isCollapsed; // 切換狀態
+
+        if (isCollapsed) {
+          mobileLeaderboard.classList.add("collapsed");
           startButton.style.display = "block";
           toggleBtn.textContent = "顯示排行榜 ▲";
         } else {
+          mobileLeaderboard.classList.remove("collapsed");
           startButton.style.display = "none";
           toggleBtn.textContent = "隱藏排行榜 ▼";
         }
@@ -591,3 +594,26 @@ class Game {
       this.comboDisplay.offsetHeight; // 觸發重排
       this.comboDisplay.style.animation = "comboPopup 0.5s ease";
     } else {
+      this.comboDisplay.classList.add("hidden");
+    }
+  }
+
+  // 處理遊戲區域點擊
+  handleGameAreaClick(event) {
+    if (!this.isPlaying) return;
+
+    // 只有在點擊不是目標時才增加總點擊數
+    // 因為目標的點擊���在 hitTarget 中處理
+    if (!event.target.closest(".target")) {
+      this.totalClicks++;
+    }
+  }
+}
+
+// 修改初始化方式
+export function initGame() {
+  const game = new Game();
+}
+
+// 等待 DOM 完全加載後再初始化遊戲
+document.addEventListener("DOMContentLoaded", initGame);
