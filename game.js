@@ -33,7 +33,7 @@ class Game {
     this.difficulty = { value: "hard" };
     this.difficultySettings = {
       hard: {
-        moveInterval: 750,
+        moveInterval: 550,
         points: 15,
       },
     };
@@ -377,6 +377,7 @@ class Game {
     this.isPlaying = false;
     clearInterval(this.gameTimer);
 
+    // 清除所有現有目標
     const existingTargets = this.gameArea.querySelectorAll(".target");
     existingTargets.forEach((target) => target.remove());
 
@@ -391,6 +392,18 @@ class Game {
     this.lastHitTime = 0;
     this.comboDisplay.classList.add("hidden");
     this.comboDisplay.style.animation = "none";
+
+    // 清除所有粒子效果
+    this.particles = [];
+    if (this.ctx) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    // 停止粒子動畫
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
 
     // 檢查是否為手機版
     if (window.innerWidth <= 768) {
@@ -415,14 +428,14 @@ class Game {
         ? ((this.successfulClicks / this.totalClicks) * 100).toFixed(1)
         : 0;
 
-    // 更新最終得分顯示，加入命率資訊
+    // 更新最終得分顯示
     this.finalScoreElement.innerHTML = `
-      <div>最終得分：${this.score}</div>
-      <div class="accuracy-stats">
-        <div>總點擊次數：${this.totalClicks}</div>
-        <div>成功點擊：${this.successfulClicks}</div>
-        <div>命中率：${accuracy}%</div>
-      </div>
+        <div>最終得分：${this.score}</div>
+        <div class="accuracy-stats">
+            <div>總點擊次數：${this.totalClicks}</div>
+            <div>成功點擊：${this.successfulClicks}</div>
+            <div>命中率：${accuracy}%</div>
+        </div>
     `;
 
     this.nameInputModal.classList.remove("hidden");
@@ -603,7 +616,7 @@ class Game {
     if (!this.isPlaying) return;
 
     // 只有在點擊不是目標時才增加總點擊數
-    // 因為目標的點擊���在 hitTarget 中處理
+    // 因為目標的點擊在 hitTarget 中處理
     if (!event.target.closest(".target")) {
       this.totalClicks++;
     }
