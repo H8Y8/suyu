@@ -1,21 +1,45 @@
 {
-  "name": "孫叔追逐戰2.0",
-  "short_name": "孫叔追逐戰2.0",
-  "version": "1.0.1",
+  "name": "孫叔追逐戰 2.0",
+  "short_name": "孫叔追逐",
+  "description": "一個有趣的反應力遊戲，現在加入連擊系統和金色特殊目標！",
+  "version": "2.0.0",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "favicon.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "favicon.png",
       "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "開始遊戲",
+      "short_name": "開始",
+      "description": "直接開始新遊戲",
+      "url": "/index.html?action=start",
+      "icons": [{ "src": "favicon.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot.png",
+      "sizes": "1280x720",
       "type": "image/png"
     }
   ],
-  "start_url": "/?v=1.0.1",
-  "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000"
-} 
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "categories": ["games", "entertainment"],
+  "lang": "zh-TW"
+}
