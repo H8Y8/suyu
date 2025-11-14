@@ -12,15 +12,18 @@
 這是一個「比誰先找到最近殭屍」的反應力遊戲：
 
 1. **3條垂直欄位** (LEFT / CENTER / RIGHT)
-2. 殭屍從畫面**上方**不斷生成，往**下方**移動
-3. 系統會自動標記**最接近底線的殭屍** (黃色高亮圈 + 底部黃色箭頭 ▼)
-4. 玩家要點擊對應欄位的 **SHOT 按鈕**
-5. **60秒**挑戰你的極限分數！
+2. 殭屍在每條欄位**排隊等待**，靜止不動
+3. 每條欄位初始有 **5 隻殭屍**，間隔 50px
+4. 系統會自動標記**最接近底線的殭屍** (黃色高亮圈 + 底部黃色箭頭 ▼)
+5. 玩家要點擊對應欄位的 **SHOT 按鈕**
+6. **60秒**挑戰你的極限分數！
 
 ### 判定規則
 
 #### ✅ 命中 (HIT)
 - 點擊按鈕時，該欄位的殭屍 = 全場最接近底線的殭屍
+- **移除該殭屍**，該欄位所有殭屍往前移動 50px
+- **生成 1 隻新殭屍**在隨機欄位的最後方
 - 得分：**+10 × Combo倍率**
 - Combo +1
 - 按鈕閃綠光 + 音效
@@ -29,15 +32,11 @@
 #### ❌ 失誤 (MISS)
 - 點擊錯誤欄位
 - 該欄位沒有殭屍
+- **正確的殭屍會跳動**（往上跳 25px 後落回）
 - 扣分：**-5分** (不低於0)
 - **Combo歸零**
 - 按鈕搖晃 + 灰色
 - 顯示 MISS 飄字
-
-#### ⏱️ 時間懲罰
-- 殭屍到達底線 = **扣 2 秒時間**
-- 顯示 -2s 飄字
-- 該殭屍自動消失
 
 ### Combo 系統
 
@@ -81,10 +80,12 @@
 ```javascript
 遊戲時間：60 秒
 欄位數量：3 條 (LEFT, CENTER, RIGHT)
-殭屍生成間隔：700ms (0.7秒)
-殭屍移動速度：150-230 px/s (隨機)
+初始殭屍數：每欄位 5 隻
+隊列間距：50px (等於殭屍高度)
+殭屍大小：50 × 50 px
 底線位置：距離底部 80px
-時間懲罰：-2秒
+新殭屍生成：每次命中生成 1 隻（隨機欄位）
+跳動動畫：25px (殭屍高度的一半)，持續 300ms
 ```
 
 ### 計分公式
@@ -93,13 +94,16 @@
 失誤扣分 = -5 (不低於 0)
 ```
 
-### 殭屍行為
-1. 從 y=0 (頂部) 生成
-2. 以隨機速度 (80-120 px/s) 向下移動
-3. 到達底線 (y >= 560) 時：
-   - 扣除 2 秒時間
-   - 殭屍自動消失
-   - 不影響 Combo
+### 殭屍行為（隊列系統）
+1. **靜態排隊**：殭屍不會自動往下移動
+2. **消滅機制**：
+   - 點擊正確按鈕時，該欄位最前方的殭屍被移除
+   - 該欄位所有剩餘殭屍往前移動 50px
+   - 在隨機欄位最後方生成 1 隻新殭屍
+3. **錯誤懲罰**：
+   - 點擊錯誤按鈕時，正確的殭屍會跳動（往上 25px，0.3秒後落回）
+   - 扣 5 分，Combo 歸零
+4. **平滑動畫**：殭屍移動到目標位置時有平滑的過渡效果
 
 ---
 
@@ -176,18 +180,21 @@ http-server
 
 ### 核心算法
 
-#### 1. 找出最接近底線的殭屍
+#### 1. 找出最接近底線的殭屍（隊列系統）
 ```javascript
 getGlobalNearestZombie() {
   let nearest = null;
-  let minDistance = Infinity;
+  let maxY = -Infinity;
 
-  zombies.forEach(zombie => {
-    if (!zombie.isAlive) return;
-    const distance = bottomLine - zombie.y;
-    if (distance >= 0 && distance < minDistance) {
-      minDistance = distance;
-      nearest = zombie;
+  // 遍歷三條欄位的隊列
+  zombieQueues.forEach((queue, colIndex) => {
+    if (queue.length > 0) {
+      // 隊列最前方的殭屍（Y座標最大的）
+      const frontZombie = queue[queue.length - 1];
+      if (frontZombie.y > maxY) {
+        maxY = frontZombie.y;
+        nearest = { zombie: frontZombie, columnIndex: colIndex };
+      }
     }
   });
 
@@ -195,19 +202,27 @@ getGlobalNearestZombie() {
 }
 ```
 
-#### 2. 射擊判定邏輯
+#### 2. 射擊判定與隊列更新邏輯
 ```javascript
 handleShot(columnIndex) {
-  const globalNearest = getGlobalNearestZombie();
-  const columnNearest = getColumnNearestZombie(columnIndex);
+  const nearestInfo = getGlobalNearestZombie();
 
-  if (globalNearest === columnNearest &&
-      globalNearest.columnIndex === columnIndex) {
-    // 命中！
-    hit(columnNearest);
+  if (nearestInfo && nearestInfo.columnIndex === columnIndex) {
+    // 命中！移除殭屍並更新隊列
+    const queue = zombieQueues[columnIndex];
+    queue.pop(); // 移除最前方的殭屍
+
+    // 所有剩餘殭屍往前移動
+    queue.forEach(zombie => {
+      zombie.targetY += queueSpacing; // +50px
+    });
+
+    // 生成新殭屍
+    spawnNewZombie();
   } else {
-    // 失誤！
-    miss();
+    // 失誤！觸發跳動動畫
+    miss(columnIndex, nearestInfo.columnIndex);
+    showJumpAnimation(nearestInfo.columnIndex);
   }
 }
 ```
@@ -220,17 +235,14 @@ gameLoop() {
   // 1. 更新時間
   timeLeft -= deltaTime;
 
-  // 2. 生成殭屍
-  if (shouldSpawn()) spawnZombie();
+  // 2. 更新殭屍動畫（平滑移動到目標位置）
+  updateZombieAnimations(deltaTime);
 
-  // 3. 移動殭屍
-  updateZombies(deltaTime);
-
-  // 4. 檢查到達底線
-  checkZombiesReachBottom();
-
-  // 5. 繪製畫面
+  // 3. 繪製畫面
   draw();
+
+  // 4. 更新UI
+  updateUI();
 
   requestAnimationFrame(gameLoop);
 }
@@ -246,25 +258,28 @@ gameLoop() {
 3. 🧠 **不要慌張**：寧可慢一點也不要按錯扣分
 
 ### 進階技巧
-1. ⚡ **預判移動**：殭屍快到底線時提前準備手指位置
-2. 🔄 **周邊視覺**：用餘光同時看三條欄位
+1. ⚡ **快速判斷**：看清黃色標記後立即按下對應按鈕
+2. 🔄 **周邊視覺**：用餘光同時觀察三條欄位的殭屍隊列
 3. 💪 **保持 Combo**：失誤一次損失很大，穩定比快更重要
 
 ### 高手策略
-1. 🎮 **節奏感**：習慣 0.7秒的快速生成間隔
-2. 📐 **距離預判**：殭屍移動更快，需要更快反應
+1. 🎮 **觀察隊列長度**：注意哪條欄位殭屍較多，預判下次可能出現的位置
+2. 📐 **快速反應**：殭屍消除後新的最近殭屍可能立即出現在其他欄位
 3. 🏆 **分數最大化**：5 Combo 後每次都是15分，盡量不中斷
 4. 🧮 **數學計算**：
-   - 60秒 × (1000ms/700ms) ≈ 最多85隻殭屍
-   - 全部命中且保持高Combo：理論最高 2000+ 分
+   - 初始 15 隻殭屍 (3條 × 5隻)
+   - 每次命中生成 1 隻新殭屍
+   - 60秒內理論最多可以命中數十隻
+   - 全部命中且保持高Combo：理論最高分視反應速度而定
 
 ---
 
 ## 📊 難度分析
 
-### 理論最高分計算
+### 理論最高分計算（隊列系統）
 ```
 假設全部命中，不失誤：
+初始15隻殭屍 + 持續命中生成新殭屍
 
 前4隻：10 × 4 = 40分
 第5-9隻：15 × 5 = 75分

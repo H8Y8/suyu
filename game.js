@@ -2,19 +2,19 @@ import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } fro
 
 // ===== Zombie 類別 =====
 class Zombie {
-    constructor(columnIndex, y, speed) {
+    constructor(columnIndex, y) {
         this.columnIndex = columnIndex; // 0, 1, 2 (left, center, right)
-        this.y = y;
-        this.speed = speed; // pixels per second
-        this.isAlive = true;
-        this.size = 50; // zombie size
+        this.y = y; // Y position
+        this.targetY = y; // Target Y position for animation
+        this.size = 50; // zombie size (also used as spacing)
+        this.isAnimating = false;
     }
 }
 
 // ===== ShotZombie 遊戲類別 =====
 class ShotZombieGame {
     constructor() {
-        console.log('🚀 Creating ShotZombie Game...');
+        console.log('🚀 Creating ShotZombie Game v3.0.0 - Queue System');
 
         // 遊戲狀態
         this.gameState = 'menu'; // 'menu' | 'playing' | 'paused' | 'gameover'
@@ -166,18 +166,41 @@ class ShotZombieGame {
 
     // ===== 遊戲開始 =====
     startGame() {
+        console.log('🎮 Starting new game with queue system');
         this.showScreen(this.gameScreen);
         this.gameState = 'playing';
         this.score = 0;
         this.combo = 0;
         this.maxCombo = 0;
         this.timeLeft = 60;
-        this.zombies = [];
-        this.lastSpawnTime = 0;
-        this.spawnInterval = 700; // Reset spawn interval
+
+        // 初始化三条队列
+        this.initializeQueues();
+
         this.lastFrameTime = performance.now();
         this.updateUI();
         this.gameLoop();
+    }
+
+    // ===== 初始化队列 =====
+    initializeQueues() {
+        this.zombieQueues = [[], [], []];
+
+        // 每条栏位生成5只僵尸
+        for (let col = 0; col < this.columnCount; col++) {
+            for (let i = 0; i < this.initialQueueLength; i++) {
+                // 从底线往上排列
+                // 最靠近底线的：bottomLine - zombieSize/2
+                // 第二个：bottomLine - zombieSize/2 - queueSpacing
+                // 依此类推
+                const y = this.bottomLine - this.zombieSize / 2 - (i * this.queueSpacing);
+                const zombie = new Zombie(col, y);
+                zombie.targetY = y;
+                this.zombieQueues[col].push(zombie);
+            }
+        }
+
+        console.log('✅ Initialized queues:', this.zombieQueues.map(q => q.length));
     }
 
     restartGame() {
@@ -211,17 +234,8 @@ class ShotZombieGame {
             return;
         }
 
-        // 生成殭屍
-        if (currentTime - this.lastSpawnTime > this.spawnInterval) {
-            this.spawnZombie();
-            this.lastSpawnTime = currentTime;
-        }
-
-        // 更新殭屍位置
-        this.updateZombies(deltaTime);
-
-        // 檢查殭屍是否到達底線
-        this.checkZombiesReachBottom();
+        // 更新僵尸动画（平滑移动到目标位置）
+        this.updateZombieAnimations(deltaTime);
 
         // 繪製畫面
         this.draw();
@@ -261,39 +275,21 @@ class ShotZombieGame {
                 this.showPenalty(zombie.columnIndex);
             }
         });
-
-        // 移除已死亡且超出畫面的殭屍
-        this.zombies = this.zombies.filter(z => z.isAlive || z.y < this.canvasHeight + 100);
     }
 
     // ===== 找出全域最接近底線的殭屍 =====
     getGlobalNearestZombie() {
         let nearest = null;
-        let minDistance = Infinity;
+        let maxY = -Infinity;
 
-        this.zombies.forEach(zombie => {
-            if (!zombie.isAlive) return;
-            const distance = this.bottomLine - zombie.y;
-            if (distance >= 0 && distance < minDistance) {
-                minDistance = distance;
-                nearest = zombie;
-            }
-        });
-
-        return nearest;
-    }
-
-    // ===== 找出指定欄位最接近底線的殭屍 =====
-    getColumnNearestZombie(columnIndex) {
-        let nearest = null;
-        let minDistance = Infinity;
-
-        this.zombies.forEach(zombie => {
-            if (!zombie.isAlive || zombie.columnIndex !== columnIndex) return;
-            const distance = this.bottomLine - zombie.y;
-            if (distance >= 0 && distance < minDistance) {
-                minDistance = distance;
-                nearest = zombie;
+        this.zombieQueues.forEach((queue, colIndex) => {
+            if (queue.length > 0) {
+                // 队列中最前面的（Y最大的）
+                const frontZombie = queue[queue.length - 1];
+                if (frontZombie.y > maxY) {
+                    maxY = frontZombie.y;
+                    nearest = { zombie: frontZombie, columnIndex: colIndex };
+                }
             }
         });
 
@@ -304,34 +300,30 @@ class ShotZombieGame {
     handleShot(columnIndex) {
         if (this.gameState !== 'playing') return;
 
-        // 找出全域最近的殭屍
-        const globalNearest = this.getGlobalNearestZombie();
-        if (!globalNearest) {
-            // 沒有殭屍，視為miss
+        const nearestInfo = this.getGlobalNearestZombie();
+        if (!nearestInfo) {
+            // 没有僵尸
             this.miss(columnIndex);
             return;
         }
 
-        // 找出該欄最近的殭屍
-        const columnNearest = this.getColumnNearestZombie(columnIndex);
-        if (!columnNearest) {
-            // 該欄沒有殭屍，miss
-            this.miss(columnIndex);
-            return;
-        }
-
-        // 判斷是否命中
-        if (globalNearest === columnNearest && globalNearest.columnIndex === columnIndex) {
-            this.hit(columnNearest, columnIndex);
+        // 判断是否点击正确的栏位
+        if (nearestInfo.columnIndex === columnIndex) {
+            this.hit(columnIndex);
         } else {
-            this.miss(columnIndex);
+            this.miss(columnIndex, nearestInfo.columnIndex);
         }
     }
 
     // ===== 命中 =====
-    hit(zombie, columnIndex) {
-        // 消除殭屍
-        zombie.isAlive = false;
+    hit(columnIndex) {
+        console.log(`✅ HIT column ${columnIndex}`);
+
+        const queue = this.zombieQueues[columnIndex];
+        if (queue.length === 0) return;
+
+        // 移除最前面的僵尸
+        const hitZombie = queue.pop();
 
         // 播放音效
         this.hitSound.currentTime = 0;
@@ -348,6 +340,14 @@ class ShotZombieGame {
         const points = Math.floor(10 * multiplier);
         this.score += points;
 
+        // 所有剩余僵尸往前移动一格
+        queue.forEach(zombie => {
+            zombie.targetY += this.queueSpacing;
+        });
+
+        // 生成新僵尸
+        this.spawnNewZombie();
+
         // 顯示命中效果
         this.showHitEffect(columnIndex, points);
 
@@ -358,7 +358,9 @@ class ShotZombieGame {
     }
 
     // ===== 失誤 =====
-    miss(columnIndex) {
+    miss(columnIndex, correctColumn = null) {
+        console.log(`❌ MISS - pressed ${columnIndex}, correct is ${correctColumn}`);
+
         // 扣分
         this.score = Math.max(0, this.score - 5);
 
@@ -368,13 +370,62 @@ class ShotZombieGame {
 
         // 顯示miss效果
         this.showMissEffect(columnIndex);
+
+        // 如果知道正确的栏位，让正确的僵尸跳动
+        if (correctColumn !== null) {
+            this.showJumpAnimation(correctColumn);
+        }
+    }
+
+    // ===== 生成新僵尸 =====
+    spawnNewZombie() {
+        // 随机选择一条栏位
+        const columnIndex = Math.floor(Math.random() * this.columnCount);
+        const queue = this.zombieQueues[columnIndex];
+
+        // 计算新僵尸的位置（在队列最后，即最上方）
+        let newY;
+        if (queue.length === 0) {
+            // 如果队列为空，从底线开始
+            newY = this.bottomLine - this.zombieSize / 2;
+        } else {
+            // 在最后一个僵尸上方
+            const lastZombie = queue[0];
+            newY = lastZombie.targetY - this.queueSpacing;
+        }
+
+        const zombie = new Zombie(columnIndex, newY);
+        zombie.targetY = newY;
+        queue.unshift(zombie); // 添加到队列开头（最上方）
+
+        console.log(`🧟 Spawned new zombie in column ${columnIndex}, queue length: ${queue.length}`);
+    }
+
+    // ===== 跳动动画 =====
+    showJumpAnimation(columnIndex) {
+        const queue = this.zombieQueues[columnIndex];
+        if (queue.length === 0) return;
+
+        const zombie = queue[queue.length - 1]; // 最前面的僵尸
+        const originalY = zombie.targetY;
+        const jumpHeight = this.zombieSize / 2; // 跳动高度 = 僵尸高度的一半
+
+        // 跳起
+        zombie.targetY = originalY - jumpHeight;
+
+        // 0.3秒后落回
+        setTimeout(() => {
+            zombie.targetY = originalY;
+        }, 300);
     }
 
     // ===== 顯示命中效果 =====
     showHitEffect(columnIndex, points) {
         const button = document.querySelector(`.shot-button[data-column="${columnIndex}"]`);
-        button.classList.add('hit');
-        setTimeout(() => button.classList.remove('hit'), 200);
+        if (button) {
+            button.classList.add('hit');
+            setTimeout(() => button.classList.remove('hit'), 200);
+        }
 
         // 顯示分數飄字
         this.showFloatingText(columnIndex, `+${points}`, '#00ff00');
@@ -383,16 +434,13 @@ class ShotZombieGame {
     // ===== 顯示失誤效果 =====
     showMissEffect(columnIndex) {
         const button = document.querySelector(`.shot-button[data-column="${columnIndex}"]`);
-        button.classList.add('miss');
-        setTimeout(() => button.classList.remove('miss'), 200);
+        if (button) {
+            button.classList.add('miss');
+            setTimeout(() => button.classList.remove('miss'), 200);
+        }
 
         // 顯示失誤飄字
         this.showFloatingText(columnIndex, 'MISS!', '#ff0000');
-    }
-
-    // ===== 顯示懲罰效果 =====
-    showPenalty(columnIndex) {
-        this.showFloatingText(columnIndex, '-2s', '#ff6600');
     }
 
     // ===== 顯示飄字 =====
@@ -408,9 +456,10 @@ class ShotZombieGame {
         textElement.style.color = color;
 
         const container = document.querySelector('.canvas-container');
-        container.appendChild(textElement);
-
-        setTimeout(() => textElement.remove(), 1000);
+        if (container) {
+            container.appendChild(textElement);
+            setTimeout(() => textElement.remove(), 1000);
+        }
     }
 
     // ===== 繪製 =====
@@ -455,48 +504,48 @@ class ShotZombieGame {
     }
 
     drawZombies() {
-        this.zombies.forEach(zombie => {
-            if (!zombie.isAlive) return;
+        this.zombieQueues.forEach((queue, colIndex) => {
+            const x = (colIndex + 0.5) * this.columnWidth;
 
-            const x = (zombie.columnIndex + 0.5) * this.columnWidth;
-            const y = zombie.y;
+            queue.forEach(zombie => {
+                // 繪製殭屍
+                this.ctx.save();
+                this.ctx.translate(x, zombie.y);
 
-            // 繪製殭屍
-            this.ctx.save();
-            this.ctx.translate(x, y);
+                // 殭屍圓形邊框
+                this.ctx.beginPath();
+                this.ctx.arc(0, 0, zombie.size / 2, 0, Math.PI * 2);
+                this.ctx.strokeStyle = 'rgba(139, 0, 0, 0.8)';
+                this.ctx.lineWidth = 3;
+                this.ctx.stroke();
+                this.ctx.clip();
 
-            // 殭屍圓形邊框
-            this.ctx.beginPath();
-            this.ctx.arc(0, 0, zombie.size / 2, 0, Math.PI * 2);
-            this.ctx.strokeStyle = 'rgba(139, 0, 0, 0.8)';
-            this.ctx.lineWidth = 3;
-            this.ctx.stroke();
-            this.ctx.clip();
+                // 繪製殭屍圖片
+                this.ctx.drawImage(
+                    this.zombieImg,
+                    -zombie.size / 2,
+                    -zombie.size / 2,
+                    zombie.size,
+                    zombie.size
+                );
 
-            // 繪製殭屍圖片
-            this.ctx.drawImage(
-                this.zombieImg,
-                -zombie.size / 2,
-                -zombie.size / 2,
-                zombie.size,
-                zombie.size
-            );
-
-            this.ctx.restore();
+                this.ctx.restore();
+            });
         });
     }
 
     highlightNearestZombie() {
-        const nearest = this.getGlobalNearestZombie();
-        if (!nearest) return;
+        const nearestInfo = this.getGlobalNearestZombie();
+        if (!nearestInfo) return;
 
-        const x = (nearest.columnIndex + 0.5) * this.columnWidth;
-        const y = nearest.y;
+        const zombie = nearestInfo.zombie;
+        const x = (nearestInfo.columnIndex + 0.5) * this.columnWidth;
+        const y = zombie.y;
 
         // 繪製高亮圈
         this.ctx.save();
         this.ctx.beginPath();
-        this.ctx.arc(x, y, nearest.size / 2 + 5, 0, Math.PI * 2);
+        this.ctx.arc(x, y, zombie.size / 2 + 5, 0, Math.PI * 2);
         this.ctx.strokeStyle = 'rgba(255, 255, 0, 0.8)';
         this.ctx.lineWidth = 4;
         this.ctx.stroke();
@@ -570,6 +619,7 @@ class ShotZombieGame {
             this.localLeaderboard.slice(0, 10) :
             this.onlineLeaderboard.slice(0, 10);
 
+        if (!list) return;
         list.innerHTML = '';
 
         currentLeaderboard.forEach((entry, index) => {
