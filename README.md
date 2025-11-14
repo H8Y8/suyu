@@ -1,271 +1,421 @@
-# 孫叔殭屍防禦戰 (Suyu Zombie Defense)
+# 🧟 ShotZombie - 孫叔殭屍射擊遊戲
 
-一個有趣的網頁塔防射擊遊戲，玩家需要點擊消滅從右邊來襲的殭屍，保衛左側防線。
+一個基於經典 **ShotZombie** 玩法的網頁反應速度遊戲。測試你的眼力和反應！
 
-## 遊戲特色
+**核心玩法：點擊最接近底線的殭屍所在欄位！**
 
-### 核心玩法
-- 🧟 殭屍從右邊生成，沿著3條路徑向左移動
-- 🎯 點擊殭屍消滅它們，獲得分數
-- ❤️ 3條生命值，殭屍突破防線扣1條命
-- 📈 難度遞增：每消滅10隻殭屍升級一波，速度加快
-- 💥 點擊特效和音效反饋
+---
 
-### 遊戲系統
-- ⏱️ 無限生存模式（直到生命耗盡）
-- 🏆 本地/線上排行榜系統
-- 📱 完美支援手機和電腦
-- 🎨 炫酷的粒子爆炸效果
-- 🔥 使用 Firebase 實現多人排行榜
+## 🎮 遊戲規則
 
-## 遊戲規則
+### 核心機制
+這是一個「比誰先找到最近殭屍」的反應力遊戲：
 
-### 得分系統
-- 消滅一隻殭屍：+1 分
-- 每 10 隻殭屍：升級一波
+1. **3條垂直欄位** (LEFT / CENTER / RIGHT)
+2. 殭屍從畫面**上方**不斷生成，往**下方**移動
+3. 系統會自動標記**最接近底線的殭屍** (黃色高亮圈 + 底部黃色箭頭 ▼)
+4. 玩家要點擊對應欄位的 **SHOT 按鈕**
+5. **60秒**挑戰你的極限分數！
 
-### 難度遞增
-- **初始速度**：2 像素/幀
-- **生成間隔**：2 秒
-- **每波提升**：
-  - 速度 +0.5 像素/幀
-  - 生成間隔 -0.2 秒（最快 0.8 秒）
+### 判定規則
 
-### 生命系統
-- 初始 3 條生命 ❤️
-- 殭屍到達左側防線 = -1 生命
-- 生命歸零 = 遊戲結束
+#### ✅ 命中 (HIT)
+- 點擊按鈕時，該欄位的殭屍 = 全場最接近底線的殭屍
+- 得分：**+10 × Combo倍率**
+- Combo +1
+- 按鈕閃綠光 + 音效
+- 顯示得分飄字
 
-## 遊戲截圖說明
+#### ❌ 失誤 (MISS)
+- 點擊錯誤欄位
+- 該欄位沒有殭屍
+- 扣分：**-5分** (不低於0)
+- **Combo歸零**
+- 按鈕搖晃 + 灰色
+- 顯示 MISS 飄字
 
-遊戲畫面包含：
-- **頂部資訊欄**：顯示消滅數、生命、波數
-- **遊戲區域**：3條橫向路徑
-- **紅色防線**：左側閃爍的警戒線
-- **殭屍**：帶紅色光暈的移動目標
-- **排行榜**：桌面版固定顯示，手機版可折疊
+#### ⏱️ 時間懲罰
+- 殭屍到達底線 = **扣 2 秒時間**
+- 顯示 -2s 飄字
+- 該殭屍自動消失
 
-## 部署步驟
+### Combo 系統
 
-### 1. 準備檔案
-確保你有以下檔案：
-- index.html - 主頁面
-- game.js - 遊戲邏輯
-- styles.css - 樣式表
-- firebase-config.js - Firebase 配置
-- suyu.jpg - 殭屍圖片（60x60px）
-- god.mp3 - 音效檔案
-- favicon.png - 網站圖標
-- manifest.json - PWA 配置
+**每 5 Combo 增加 0.5 倍分數倍率**
 
-### 2. Firebase 設置
+| Combo 數 | 倍率 | 每次得分 |
+|----------|------|---------|
+| 1-4      | 1x   | 10分    |
+| 5-9      | 1.5x | 15分    |
+| 10-14    | 2x   | 20分    |
+| 15-19    | 2.5x | 25分    |
+| 20+      | 3x   | 30分    |
 
-1. 前往 [Firebase Console](https://console.firebase.google.com/)
-2. 創建新專案或使用現有專案
-3. 啟用 Realtime Database
-   - 選擇 "測試模式" 或配置安全規則
-   - 選擇最近的地區
-4. 複製 Firebase 配置到 `firebase-config.js`
+**提示**：保持連續命中才能獲得高分！
 
-**安全規則建議**：
-```json
-{
-  "rules": {
-    "zombie-leaderboard": {
-      ".read": true,
-      ".write": true,
-      ".indexOn": ["score"]
+---
+
+## 🎯 遊戲特色
+
+### 視覺提示系統
+- 🟡 **黃色高亮圈**：標記最接近底線的殭屍
+- 🔻 **黃色箭頭**：在底線位置指示正確欄位
+- 🔴 **紅色底線**：危險區域，殭屍到達會扣時間
+- ⚪ **欄位分隔線**：清楚區分三個欄位
+
+### 即時反饋
+- ✅ 命中：按鈕變綠 + 分數飄字
+- ❌ 失誤：按鈕抖動變灰 + MISS 飄字
+- ⏱️ 懲罰：扣時間飄字
+
+### 排行榜系統
+- 📊 **本地排行榜**：儲存在瀏覽器
+- 🌐 **線上排行榜**：Firebase 雲端同步
+- 🏆 記錄最高分數和 Combo
+
+---
+
+## 📋 詳細遊戲規格
+
+### 基本參數
+```javascript
+遊戲時間：60 秒
+欄位數量：3 條 (LEFT, CENTER, RIGHT)
+殭屍生成間隔：900ms (0.9秒)
+殭屍移動速度：80-120 px/s (隨機)
+底線位置：距離底部 80px
+時間懲罰：-2秒
+```
+
+### 計分公式
+```
+命中得分 = 10 × (1 + floor(combo / 5) × 0.5)
+失誤扣分 = -5 (不低於 0)
+```
+
+### 殭屍行為
+1. 從 y=0 (頂部) 生成
+2. 以隨機速度 (80-120 px/s) 向下移動
+3. 到達底線 (y >= 560) 時：
+   - 扣除 2 秒時間
+   - 殭屍自動消失
+   - 不影響 Combo
+
+---
+
+## 🎨 界面說明
+
+### 主選單畫面
+- 遊戲標題和規則說明
+- **開始遊戲** 按鈕
+- **查看排行榜** 按鈕
+
+### 遊戲畫面
+```
+┌─────────────────────────────┐
+│ ⏱️ 60s  💀 120  COMBO × 5    │ ← 頂部資訊欄
+├─────────────────────────────┤
+│  LEFT  │ CENTER │  RIGHT    │ ← 欄位標籤
+│    │      │         │        │
+│   🧟    │      🧟      │     │
+│    │     🧟        │     🧟   │ ← Canvas遊戲區
+│    │      │    🟡🧟←    │     │ ← 黃圈 = 最近
+│    │      │    ▼    │     │   │ ← 箭頭指示
+│─ ─ ─ ─ ─ ─紅色底線─ ─ ─ ─ ─│
+├─────────────────────────────┤
+│ [LEFT]  [CENTER]  [RIGHT]   │ ← SHOT按鈕
+│  SHOT     SHOT      SHOT     │
+└─────────────────────────────┘
+```
+
+### 結束畫面
+- 最終得分
+- 最高 Combo
+- 名字輸入框
+- **提交分數** 按鈕
+- **再玩一次** 按鈕
+
+---
+
+## 🚀 部署方式
+
+### 方法一：GitHub Pages（推薦）
+
+1. Fork 或 Clone 這個倉庫
+2. 推送到你的 GitHub
+3. 前往 Settings > Pages
+4. Source 選擇 `main` 分支
+5. 等待部署完成
+6. 訪問 `https://[your-username].github.io/[repo-name]/`
+
+### 方法二：本地測試
+
+```bash
+# 使用 Python 簡易伺服器
+python -m http.server 8000
+
+# 或使用 Node.js http-server
+npm install -g http-server
+http-server
+
+# 或使用 VS Code Live Server 擴充
+```
+
+訪問 `http://localhost:8000` 即可遊玩
+
+---
+
+## 🔧 技術細節
+
+### 技術棧
+- **純原生 JavaScript (ES6+)**：無依賴框架
+- **Canvas 2D API**：殭屍渲染和動畫
+- **Firebase Realtime Database**：線上排行榜
+- **LocalStorage**：本地排行榜
+- **CSS3 動畫**：按鈕效果和飄字
+
+### 核心算法
+
+#### 1. 找出最接近底線的殭屍
+```javascript
+getGlobalNearestZombie() {
+  let nearest = null;
+  let minDistance = Infinity;
+
+  zombies.forEach(zombie => {
+    if (!zombie.isAlive) return;
+    const distance = bottomLine - zombie.y;
+    if (distance >= 0 && distance < minDistance) {
+      minDistance = distance;
+      nearest = zombie;
     }
+  });
+
+  return nearest;
+}
+```
+
+#### 2. 射擊判定邏輯
+```javascript
+handleShot(columnIndex) {
+  const globalNearest = getGlobalNearestZombie();
+  const columnNearest = getColumnNearestZombie(columnIndex);
+
+  if (globalNearest === columnNearest &&
+      globalNearest.columnIndex === columnIndex) {
+    // 命中！
+    hit(columnNearest);
+  } else {
+    // 失誤！
+    miss();
   }
 }
 ```
 
-### 3. 部署方式
-
-#### 方法一：GitHub Pages（推薦）
-1. 在 GitHub 創建儲存庫
-2. 上傳所有檔案
-3. 前往 Settings > Pages
-4. 選擇分支（main 或 zombie-game）
-5. 等待部署完成
-
-#### 方法二：其他託管服務
-- Netlify - 拖放部署
-- Vercel - GitHub 自動部署
-- Firebase Hosting - `firebase deploy`
-- Cloudflare Pages - Git 整合
-
-#### 方法三：本地測試
-1. 安裝 VS Code
-2. 安裝 Live Server 擴充
-3. 右鍵 index.html > Open with Live Server
-
-## 技術細節
-
-### 遊戲架構
+#### 3. 遊戲循環 (requestAnimationFrame)
 ```javascript
-class ZombieGame {
-  - 遊戲狀態管理
-  - 殭屍生成和移動
-  - 碰撞檢測
-  - 粒子效果系統
-  - 排行榜整合
+gameLoop() {
+  const deltaTime = (currentTime - lastFrameTime) / 1000;
+
+  // 1. 更新時間
+  timeLeft -= deltaTime;
+
+  // 2. 生成殭屍
+  if (shouldSpawn()) spawnZombie();
+
+  // 3. 移動殭屍
+  updateZombies(deltaTime);
+
+  // 4. 檢查到達底線
+  checkZombiesReachBottom();
+
+  // 5. 繪製畫面
+  draw();
+
+  requestAnimationFrame(gameLoop);
 }
 ```
 
-### 核心算法
-- **遊戲循環**：使用 `requestAnimationFrame`
-- **殭屍移動**：每幀減少 X 座標
-- **路徑分配**：隨機選擇 3 條路徑之一
-- **難度調整**：基於分數動態調整
+---
 
-### 性能優化
-- Canvas 粒子系統
-- DOM 元素重用
-- 事件委託
-- 防抖動處理
+## 🎓 遊戲技巧
 
-## 自訂修改
+### 新手提示
+1. 👀 **專注看黃色標記**：不要自己猜，相信系統的高亮提示
+2. 🎯 **看箭頭按按鈕**：底部黃色箭頭▼直接告訴你該按哪個
+3. 🧠 **不要慌張**：寧可慢一點也不要按錯扣分
 
-### 調整遊戲難度
+### 進階技巧
+1. ⚡ **預判移動**：殭屍快到底線時提前準備手指位置
+2. 🔄 **周邊視覺**：用餘光同時看三條欄位
+3. 💪 **保持 Combo**：失誤一次損失很大，穩定比快更重要
 
-**修改初始速度**（game.js:14）：
-```javascript
-this.zombieSpeed = 2; // 改為 3 更難，1 更簡單
-```
-
-**修改生成間隔**（game.js:15）：
-```javascript
-this.spawnInterval = 2000; // 毫秒，改為 1000 更快
-```
-
-**修改路徑數量**（game.js:16）：
-```javascript
-this.lanes = 3; // 改為 5 增加複雜度
-```
-
-**修改生命數**（game.js:7）：
-```javascript
-this.lives = 3; // 改為 5 更簡單
-```
-
-### 自訂視覺效果
-
-**修改殭屍顏色**（styles.css:56）：
-```css
-border: 3px solid rgba(0, 255, 0, 0.5); /* 綠色殭屍 */
-```
-
-**修改防線顏色**（styles.css:77-82）：
-```css
-background: linear-gradient(...,
-    rgba(0, 0, 255, 0.8) 50%, /* 藍色防線 */
-    ...);
-```
-
-## 版本歷史
-
-### v2.0.0 (當前版本)
-- 🎮 全新殭屍防禦玩法
-- 🧟 3 條路徑系統
-- 📊 波數難度系統
-- ❤️ 生命值機制
-- 🏆 獨立排行榜（zombie-leaderboard）
-
-### v1.0.1 (原版追逐戰)
-- 點擊追逐玩法
-- 30 秒限時
-- 本地/線上排行榜
-
-## 遊戲技巧
-
-### 初學者
-1. 優先點擊最接近防線的殭屍
-2. 保持冷靜，不要慌亂點擊
-3. 注意觀察多條路徑
-
-### 進階玩家
-1. 預判殭屍移動路線
-2. 在高波數時專注於威脅最大的目標
-3. 利用殭屍重疊時一次消滅多個
-
-### 高手技巧
-1. 計算殭屍到達時間，優化點擊順序
-2. 在第 5 波前儘量提升分數
-3. 保持連續點擊節奏
-
-## 問題排解
-
-### 殭屍不出現
-1. 檢查瀏覽器控制台錯誤
-2. 確認 suyu.jpg 存在
-3. 清除瀏覽器快取（Ctrl + F5）
-
-### 排行榜不更新
-1. 檢查 Firebase 配置
-2. 確認網路連接
-3. 查看 Firebase 安全規則
-
-### 遊戲卡頓
-1. 關閉其他瀏覽器分頁
-2. 降低殭屍生成速度
-3. 檢查電腦 CPU 使用率
-
-### 手機版問題
-1. 確保使用現代瀏覽器（Chrome/Safari）
-2. 關閉省電模式
-3. 橫向模式可能效果更好
-
-## 開發說明
-
-### 檔案結構
-```
-/
-├── index.html          # 主頁面
-├── game.js            # 遊戲邏輯（427行）
-├── styles.css         # 樣式表
-├── firebase-config.js # Firebase 配置
-├── manifest.json      # PWA 配置
-├── suyu.jpg          # 殭屍圖片
-├── god.mp3           # 音效
-└── README.md         # 說明文件
-```
-
-### 依賴項
-- Firebase SDK 11.0.1
-  - firebase-app
-  - firebase-database
-  - firebase-analytics
-
-### 瀏覽器支援
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
-
-## 貢獻指南
-
-歡迎提交 Issue 和 Pull Request！
-
-### 建議改進方向
-- [ ] 添加音效開關
-- [ ] 多種殭屍類型（快速、坦克型等）
-- [ ] 道具系統（減速、炸彈等）
-- [ ] 成就系統
-- [ ] 多語言支援
-- [ ] 更多視覺特效
-
-## 授權
-
-本專案採用 MIT 授權。
-
-## 聯絡方式
-
-如有任何問題或建議，歡迎：
-- 提出 Issue
-- 發送 Pull Request
-- 討論遊戲改進
+### 高手策略
+1. 🎮 **節奏感**：習慣 0.9秒的生成間隔
+2. 📐 **距離預判**：計算殭屍到達底線的時間窗口
+3. 🏆 **分數最大化**：5 Combo 後每次都是15分，盡量不中斷
+4. 🧮 **數學計算**：
+   - 60秒 × (1000ms/900ms) ≈ 最多67隻殭屍
+   - 全部命中且保持高Combo：理論最高 1500+ 分
 
 ---
 
-**遊戲愉快！祝你能守住防線！** 🧟‍♂️🎯
+## 📊 難度分析
+
+### 理論最高分計算
+```
+假設全部命中，不失誤：
+
+前4隻：10 × 4 = 40分
+第5-9隻：15 × 5 = 75分
+第10隻起：20+ 分
+
+60秒估計可打 50-60 隻
+理論最高分：約 1200-1500 分
+```
+
+### 實際難度
+- **Easy (0-200分)**：學習階段
+- **Normal (200-500分)**：掌握基本節奏
+- **Hard (500-800分)**：高 Combo 維持
+- **Expert (800-1000分)**：極少失誤
+- **Master (1000+分)**：接近理論極限
+
+---
+
+## 🛠️ 自訂修改
+
+### 調整遊戲參數
+
+**修改遊戲時間** (game.js:22)
+```javascript
+this.timeLeft = 60; // 改成 90 秒更輕鬆
+```
+
+**修改生成速度** (game.js:25)
+```javascript
+this.spawnInterval = 900; // 改成 1200 更慢
+```
+
+**修改殭屍速度** (game.js:184)
+```javascript
+const speed = 80 + Math.random() * 40; // 改成 60 + 30 更慢
+```
+
+**修改時間懲罰** (game.js:204)
+```javascript
+this.timeLeft = Math.max(0, this.timeLeft - 2); // 改成 -1 更寬容
+```
+
+**修改 Combo 倍率** (game.js:290)
+```javascript
+const multiplier = 1 + Math.floor(this.combo / 5) * 0.5;
+// 改成 / 3 更快加倍
+// 改成 * 1.0 每次多加1倍
+```
+
+### 視覺自訂
+
+**修改主題顏色** (styles.css:10)
+```css
+background: linear-gradient(135deg, #1a0000 0%, #4a0000 100%);
+/* 改成藍色主題 */
+background: linear-gradient(135deg, #001a3a 0%, #004a8a 100%);
+```
+
+**修改按鈕顏色** (styles.css:271)
+```css
+background: linear-gradient(145deg, #cc0000, #990000);
+/* 改成綠色 */
+background: linear-gradient(145deg, #00cc00, #009900);
+```
+
+---
+
+## 🐛 常見問題
+
+### Q: 殭屍不出現？
+**A**: 檢查 `suyu.jpg` 是否存在且路徑正確
+
+### Q: 音效不播放？
+**A**: 某些瀏覽器需要用戶互動後才允許播放音效，點擊開始遊戲後即可
+
+### Q: 排行榜不更新？
+**A**: 檢查 Firebase 配置和網路連線
+
+### Q: 手機版顯示異常？
+**A**: 使用現代瀏覽器（Chrome/Safari），開啟全螢幕模式
+
+### Q: Canvas 模糊？
+**A**: 這是正常現象，遊戲設計為 360x640 解析度
+
+---
+
+## 📱 瀏覽器支援
+
+- ✅ Chrome 90+
+- ✅ Firefox 88+
+- ✅ Safari 14+
+- ✅ Edge 90+
+- ✅ iOS Safari 14+
+- ✅ Android Chrome
+
+---
+
+## 🎮 版本歷史
+
+### v3.0.0 (當前版本) - ShotZombie 模式
+- 🎯 全新 ShotZombie 玩法
+- 🎮 3欄位射擊機制
+- 🟡 黃色高亮標記系統
+- 🔻 底部箭頭指示
+- 💯 Combo 倍率系統
+- ⏱️ 60秒限時挑戰
+- 🏆 本地/線上雙排行榜
+- 📱 完整手機版支援
+
+### v2.0.0 - 殭屍防禦模式
+- 橫向移動殭屍
+- 3條生命系統
+- 波數難度遞增
+
+### v1.0.0 - 追逐戰模式
+- 30秒限時點擊
+- 隨機位置跳躍
+
+---
+
+## 🤝 貢獻
+
+歡迎提交 Issue 和 Pull Request！
+
+### 改進建議
+- [ ] 添加音效開關
+- [ ] 多種殭屍類型（快速/慢速/坦克）
+- [ ] 道具系統（減速/炸彈/多倍分數）
+- [ ] 成就系統
+- [ ] 每日挑戰
+- [ ] 多人對戰模式
+- [ ] 觸覺反饋 (手機震動)
+- [ ] 更多視覺特效
+
+---
+
+## 📄 授權
+
+本專案採用 MIT 授權。
+
+---
+
+## 🙏 致謝
+
+- 靈感來源：經典手機遊戲 **ShotZombie**
+- 圖片素材：suyu.jpg
+- 音效：god.mp3
+- 框架：Firebase Realtime Database
+
+---
+
+**準備好挑戰你的反應速度了嗎？開始遊戲吧！** 🎮🧟
+
+**遊戲網址**：https://h8y8.github.io/suyu/

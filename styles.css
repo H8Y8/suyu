@@ -1,898 +1,532 @@
-body {
+/* ===== 全局样式 ===== */
+* {
     margin: 0;
     padding: 0;
-    background: #000;
-    font-family: Arial, sans-serif;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #1a0000 0%, #4a0000 100%);
+    color: white;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .game-container {
-    max-width: 800px;
-    margin: 20px auto;
-    padding: 20px;
-}
-
-.game-info {
+    max-width: 480px;
+    margin: 0 auto;
+    height: 100vh;
     display: flex;
-    justify-content: space-around;
-    color: white;
-    font-size: 24px;
-    margin-bottom: 20px;
-    background: rgba(255, 0, 0, 0.2);
-    padding: 15px;
-    border-radius: 10px;
-    border: 2px solid rgba(255, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    position: relative;
 }
 
-.game-info > div {
+/* ===== 畫面管理 ===== */
+.screen {
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 5px;
+    justify-content: center;
+    padding: 20px;
 }
 
-#game-area {
+.screen.hidden {
+    display: none;
+}
+
+/* ===== 開始畫面 ===== */
+#menu-screen h1 {
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.instruction {
+    font-size: 1.2em;
+    margin-bottom: 30px;
+    text-align: center;
+    color: #ffcc00;
+}
+
+.rules {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    max-width: 400px;
+}
+
+.rules h3 {
+    margin-bottom: 15px;
+    color: #ff6666;
+}
+
+.rules ul {
+    list-style: none;
+    text-align: left;
+}
+
+.rules li {
+    margin: 10px 0;
+    padding-left: 10px;
+}
+
+/* ===== 按鈕樣式 ===== */
+.big-button {
+    padding: 15px 50px;
+    font-size: 1.5em;
+    font-weight: bold;
+    background: linear-gradient(145deg, #ff3333, #cc0000);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4);
+    transition: all 0.3s ease;
+    margin: 10px;
+}
+
+.big-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 0, 0, 0.6);
+}
+
+.big-button:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(255, 0, 0, 0.4);
+}
+
+.small-button {
+    padding: 10px 30px;
+    font-size: 1em;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 5px;
+}
+
+.small-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* ===== 遊戲畫面 ===== */
+#game-screen {
+    padding: 0;
+    justify-content: flex-start;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     width: 100%;
-    height: 400px;
-    background: #000;
+    max-width: 480px;
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.7);
+    border-bottom: 2px solid rgba(255, 0, 0, 0.5);
+}
+
+.info-left, .info-center, .info-right {
+    flex: 1;
+}
+
+.info-left {
+    text-align: left;
+}
+
+.info-center {
+    text-align: center;
+}
+
+.info-right {
+    text-align: right;
+}
+
+.time-display {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #ffcc00;
+}
+
+.score-display {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #ff3333;
+}
+
+.combo-display {
+    font-size: 1em;
+    color: #00ff00;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.combo-display.active {
+    opacity: 1;
+}
+
+.icon-button {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    font-size: 1.5em;
+    padding: 5px 15px;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: background 0.3s;
+}
+
+.icon-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ===== Canvas 區域 ===== */
+.canvas-container {
     position: relative;
+    width: 360px;
+    height: 640px;
+    margin: 20px auto;
+    background: #000;
+    border: 3px solid rgba(255, 0, 0, 0.5);
     border-radius: 10px;
     overflow: hidden;
 }
 
-/* 僵尸样式 */
-.zombie {
-    position: absolute;
-    width: 60px;
-    height: 60px;
-    cursor: crosshair;
-    z-index: 10;
-    animation: zombie-wobble 0.5s infinite;
-}
-
-.zombie img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 3px solid rgba(255, 0, 0, 0.5);
-    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
-}
-
-.zombie:hover img {
-    border-color: rgba(255, 255, 0, 0.8);
-    box-shadow: 0 0 15px rgba(255, 255, 0, 0.8);
-}
-
-@keyframes zombie-wobble {
-    0%, 100% { transform: rotate(-2deg); }
-    50% { transform: rotate(2deg); }
-}
-
-/* 防线 */
-.base-line {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 5px;
-    height: 100%;
-    background: linear-gradient(to bottom,
-        transparent 0%,
-        rgba(255, 0, 0, 0.5) 20%,
-        rgba(255, 0, 0, 0.8) 50%,
-        rgba(255, 0, 0, 0.5) 80%,
-        transparent 100%);
-    box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
-    z-index: 5;
-    animation: pulse-line 2s infinite;
-}
-
-@keyframes pulse-line {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
-}
-
-.leaderboard {
-    margin-top: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 15px;
-    border-radius: 10px;
-}
-
-#start-button {
+#game-canvas {
     display: block;
-    margin: 20px auto;
-    padding: 10px 20px;
-    font-size: 18px;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-#start-button:hover {
-    background: #45a049;
-}
-
-.difficulty-selector {
-    margin-bottom: 20px;
-    color: white;
-}
-
-#difficulty {
-    padding: 5px 10px;
-    font-size: 16px;
-    border-radius: 5px;
-}
-
-.countdown {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 100px;
-    color: white;
-    z-index: 100;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
+}
+
+.lane-indicators {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    pointer-events: none;
+}
+
+.lane-label {
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: bold;
+}
+
+/* ===== 飄字效果 ===== */
+.floating-text {
+    position: absolute;
+    font-size: 1.5em;
+    font-weight: bold;
+    pointer-events: none;
+    animation: float-up 1s ease-out forwards;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes float-up {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-50px) scale(1.5);
+        opacity: 0;
+    }
+}
+
+/* ===== 射擊按鈕 ===== */
+.shot-buttons {
     display: flex;
     justify-content: center;
-    align-items: center;
-    z-index: 1000;
+    gap: 10px;
+    padding: 20px;
+    width: 100%;
+    max-width: 480px;
 }
 
-.modal-content {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
+.shot-button {
+    flex: 1;
+    max-width: 120px;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, #cc0000, #990000);
+    border: 3px solid #ff0000;
+    border-radius: 15px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.1s ease;
+    box-shadow: 0 5px 15px rgba(255, 0, 0, 0.5);
+}
+
+.shot-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(255, 0, 0, 0.7);
+}
+
+.shot-button:active {
+    transform: scale(0.95);
+}
+
+.shot-button.hit {
+    background: linear-gradient(145deg, #00ff00, #00cc00);
+    border-color: #00ff00;
+    animation: hit-flash 0.2s;
+}
+
+.shot-button.miss {
+    background: linear-gradient(145deg, #666, #333);
+    border-color: #999;
+    animation: miss-shake 0.2s;
+}
+
+@keyframes hit-flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes miss-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.button-label {
+    font-size: 0.8em;
+    color: #ffcc00;
+    margin-bottom: 5px;
+}
+
+.button-shot {
+    font-size: 1.5em;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* ===== 結束畫面 ===== */
+#gameover-screen {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+#gameover-screen h2 {
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    color: #ff3333;
+}
+
+.final-stats {
+    margin-bottom: 30px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 20px 40px;
+    border-radius: 15px;
+}
+
+.final-stats p {
+    font-size: 1.5em;
+    margin: 15px 0;
+}
+
+.final-score {
+    color: #ffcc00;
+}
+
+.final-combo {
+    color: #00ff00;
 }
 
 .input-group {
     margin: 20px 0;
 }
 
+.input-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
 .input-group input {
-    padding: 5px 10px;
-    font-size: 16px;
-    margin-left: 10px;
+    padding: 10px 20px;
+    font-size: 1.2em;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    text-align: center;
+    width: 250px;
 }
 
-.hidden {
-    display: none;
+.input-group input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
 }
 
-@media screen and (max-width: 768px) {
-    .game-container {
-        max-width: 100%;
-        margin: 5px;
-        padding: 5px;
-        position: relative;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .game-info {
-        font-size: 16px;
-        margin-bottom: 10px;
-    }
-
-    #game-area {
-        height: 60vh;
-        width: 95vw;
-        margin: 0 auto;
-        margin-bottom: 80px;
-    }
-
-    .leaderboard-container {
-        display: block;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-        transition: transform 0.3s ease;
-        z-index: 1000;
-    }
-
-    .toggle-leaderboard-btn {
-        display: block;
-        width: 100%;
-        padding: 10px;
-        background: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 5px 5px 0 0;
-        cursor: pointer;
-        font-size: 16px;
-    }
-
-    .leaderboard {
-        padding: 10px;
-        max-height: 50vh;
-        overflow-y: auto;
-        transition: max-height 0.3s ease;
-    }
-
-    .leaderboard.collapsed {
-        max-height: 0;
-        overflow: hidden;
-        padding: 0;
-    }
-
-    #leaderboard-list {
-        margin: 0;
-        padding: 0;
-    }
-
-    #start-button {
-        position: fixed;
-        bottom: 80px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 98;
-        padding: 12px 30px;
-        font-size: 18px;
-        border-radius: 25px;
-        background: linear-gradient(145deg, #4CAF50, #45a049);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
-    }
-
-    .zombie {
-        width: 55px;
-        height: 55px;
-    }
-
-    .game-info {
-        font-size: 16px;
-        padding: 10px;
-    }
-
-    .countdown-timer {
-        font-size: 60px;
-    }
-
-    .modal-content {
-        width: 90%;
-        margin: 0 10px;
-        font-size: 14px;
-    }
-
-    .input-group input {
-        width: 80%;
-        margin: 5px 0;
-    }
-
-    /* 調整開始按鈕位置和層級 */
-    #start-button {
-        position: fixed;
-        bottom: 80px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 98;
-        padding: 12px 30px;
-        font-size: 18px;
-        border-radius: 25px;
-        background: linear-gradient(145deg, #4CAF50, #45a049);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
-    }
-
-    /* 提高排行榜容器的層級 */
-    .leaderboard-container {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        z-index: 9999;
-    }
-
-    /* 確保排行榜內容也有較高的層級 */
-    .mobile-leaderboard {
-        position: relative;
-        z-index: 9999;
-        padding: 10px;
-        max-height: 50vh;
-        overflow-y: auto;
-        background: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    /* 確保切換按鈕也有較高的層級 */
-    .toggle-leaderboard-btn {
-        position: relative;
-        z-index: 9999;
-        width: 100%;
-        padding: 12px;
-        background: linear-gradient(145deg, #4CAF50, #45a049);
-        color: white;
-        border: none;
-        border-radius: 10px 10px 0 0;
-        font-weight: bold;
-    }
-
-    /* 添加開始按鈕隱藏的樣式 */
-    #start-button.hidden-mobile {
-        display: none;
-    }
+/* ===== 排行榜畫面 ===== */
+#leaderboard-screen h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
 }
 
-.countdown-timer {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 120px;
-    color: rgba(255, 255, 255, 0.3);
-    z-index: 1;
-    pointer-events: none;
+.leaderboard-switch {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 5px;
+    border-radius: 25px;
 }
 
-.particle-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
+.switch-btn {
+    padding: 10px 30px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: all 0.3s;
+}
+
+.switch-btn.active {
+    background: linear-gradient(145deg, #ff3333, #cc0000);
+    color: white;
+}
+
+.leaderboard-list {
     width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 2;
+    max-width: 400px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
 }
 
-#leaderboard-list li {
+.leaderboard-list ol {
+    list-style: none;
+    counter-reset: item;
+}
+
+.leaderboard-list li {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
-}
-
-#leaderboard-list li:last-child {
-    border-bottom: none;
-}
-
-#leaderboard-list .rank {
-    width: 80px;
-    font-weight: bold;
-}
-
-#leaderboard-list .name {
-    width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-#leaderboard-list .score {
-    width: 80px;
-    color: #e44d26;
-    font-weight: bold;
-}
-
-#leaderboard-list .difficulty {
-    width: 60px;
-    color: #4CAF50;
-}
-
-#leaderboard-list .date {
-    width: 120px;
-    color: #666;
-    font-size: 0.9em;
-}
-
-/* 桌面版的排行榜樣式 */
-.leaderboard {
-    margin-top: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 15px;
-    border-radius: 10px;
-}
-
-/* 在桌面隱藏手機版的排行榜容器和按鈕 */
-.leaderboard-container {
-    display: none;  /* 完全隱藏手機版容器 */
-}
-
-.toggle-leaderboard-btn {
-    display: none;  /* 完全隱藏切換按鈕 */
-}
-
-/* 手機版的樣式 */
-@media screen and (max-width: 768px) {
-    /* ... 其他手機版樣式保持不變 ... */
-
-    /* 在手機版顯示排行榜容器和按鈕 */
-    .leaderboard-container {
-        display: block;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-        transition: transform 0.3s ease;
-        z-index: 1000;
-    }
-
-    .toggle-leaderboard-btn {
-        display: block;
-        width: 100%;
-        padding: 10px;
-        background: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 5px 5px 0 0;
-        cursor: pointer;
-        font-size: 16px;
-    }
-
-    /* 在手機版隱藏原本的排行榜 */
-    .leaderboard:not(.collapsed) {
-        display: block;
-    }
-
-    .mobile-leaderboard {
-        padding: 10px;
-        max-height: 50vh;
-        overflow-y: auto;
-        transition: max-height 0.3s ease;
-    }
-
-    /* 確保收起狀態時完全隱藏 */
-    .mobile-leaderboard.collapsed {
-        max-height: 0;
-        overflow: hidden;
-        padding: 0;
-        margin: 0;
-        border: none;
-    }
-} 
-
-/* 桌面版排行榜 */
-.desktop-leaderboard {
-    display: block;
-    margin-top: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 15px;
-    border-radius: 10px;
-}
-
-/* 手機版排行榜容器（預設隱藏） */
-.leaderboard-container {
-    display: none;
-}
-
-/* 手機版樣式 */
-@media screen and (max-width: 768px) {
-    /* 隱藏桌面版排行榜 */
-    .desktop-leaderboard {
-        display: none !important;  /* 強制隱藏 */
-    }
-
-    /* 顯示手機版排行榜容器 */
-    .leaderboard-container {
-        display: block;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        z-index: 1000;
-    }
-
-    .toggle-leaderboard-btn {
-        display: block;
-        width: 100%;
-        padding: 10px;
-        background: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 5px 5px 0 0;
-        cursor: pointer;
-        font-size: 16px;
-    }
-
-    .mobile-leaderboard {
-        padding: 10px;
-        max-height: 50vh;
-        overflow-y: auto;
-        transition: all 0.3s ease;
-        background: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    .mobile-leaderboard.collapsed {
-        max-height: 0 !important;
-        padding: 0 !important;
-        overflow: hidden;
-        border: none;
-    }
-
-    /* ... 其他手機版樣式保持不變 ... */
-} 
-
-/* 桌面版排行榜樣式 */
-.desktop-leaderboard {
-    margin-top: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 15px;
-    border-radius: 10px;
-}
-
-/* 手機版按鈕預設隱藏 */
-.leaderboard-container .toggle-leaderboard-btn {
-    display: none;
-}
-
-/* 手機版樣式 */
-@media screen and (max-width: 768px) {
-    /* 排行榜容器樣式 */
-    .leaderboard-container {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        z-index: 1000;
-    }
-
-    /* 顯示切換按鈕 */
-    .leaderboard-container .toggle-leaderboard-btn {
-        display: block;
-        width: 100%;
-        padding: 10px;
-        background: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 5px 5px 0 0;
-        cursor: pointer;
-        font-size: 16px;
-    }
-
-    /* 排行榜樣式 */
-    .desktop-leaderboard {
-        margin: 0;
-        padding: 10px;
-        max-height: 50vh;
-        overflow-y: auto;
-        transition: all 0.3s ease;
-        background: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    /* 收起狀態 */
-    .desktop-leaderboard.collapsed {
-        max-height: 0;
-        padding: 0;
-        overflow: hidden;
-        border: none;
-    }
-
-    /* 調整排行榜內容樣式 */
-    .desktop-leaderboard h2 {
-        margin: 0 0 10px 0;
-        font-size: 18px;
-    }
-
-    #leaderboard-list {
-        margin: 0;
-        padding: 0;
-        font-size: 14px;
-    }
-
-    #leaderboard-list li {
-        padding: 5px 0;
-    }
-} 
-
-/* 手機版排行榜樣式 */
-@media screen and (max-width: 768px) {
-    /* ... 其他手機版樣式保持不變 ... */
-
-    .leaderboard-container {
-        display: block;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        z-index: 1000;
-    }
-
-    .toggle-leaderboard-btn {
-        display: block;
-        width: 100%;
-        padding: 12px;
-        background: linear-gradient(145deg, #4CAF50, #45a049);
-        color: white;
-        border: none;
-        border-radius: 10px 10px 0 0;
-        cursor: pointer;
-        font-size: 16px;
-        font-weight: bold;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-        transition: background-color 0.3s ease;
-    }
-
-    .toggle-leaderboard-btn:active {
-        background: linear-gradient(145deg, #45a049, #4CAF50);
-    }
-
-    .mobile-leaderboard {
-        padding: 15px;
-        max-height: 50vh;
-        overflow-y: auto;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1);
-        border-radius: 15px 15px 0 0;
-        transition: all 0.3s ease;
-    }
-
-    .mobile-leaderboard h2 {
-        margin: 0 0 15px 0;
-        color: #333;
-        font-size: 20px;
-        text-align: center;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-    }
-
-    .mobile-leaderboard #leaderboard-list-mobile {
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-
-    .mobile-leaderboard #leaderboard-list-mobile li {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 10px;
-        margin-bottom: 8px;
-        background: rgba(255, 255, 255, 0.8);
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        transition: transform 0.2s ease;
-    }
-
-    .mobile-leaderboard #leaderboard-list-mobile li:last-child {
-        margin-bottom: 0;
-    }
-
-    .mobile-leaderboard #leaderboard-list-mobile li:active {
-        transform: scale(0.98);
-    }
-
-    .mobile-leaderboard .rank {
-        font-weight: bold;
-        color: #4CAF50;
-        min-width: 70px;
-    }
-
-    .mobile-leaderboard .name {
-        flex: 1;
-        margin: 0 10px;
-        color: #333;
-        font-weight: 500;
-    }
-
-    .mobile-leaderboard .score {
-        color: #e44d26;
-        font-weight: bold;
-        min-width: 80px;
-        text-align: right;
-    }
-
-    .mobile-leaderboard .date {
-        color: #666;
-        font-size: 0.8em;
-        min-width: 100px;
-        text-align: right;
-    }
-
-    /* 收起狀態的動畫 */
-    .mobile-leaderboard.collapsed {
-        max-height: 0;
-        padding: 0;
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    /* 調整開始按鈕位置，避免被排行榜遮擋 */
-    #start-button {
-        position: fixed;
-        bottom: 70px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 1001;
-        padding: 12px 30px;
-        font-size: 18px;
-        border-radius: 25px;
-        background: linear-gradient(145deg, #4CAF50, #45a049);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
-    }
-
-    #start-button:active {
-        transform: translateX(-50%) scale(0.95);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    }
-} 
-
-/* 排行榜標題和切換按鈕容器 */
-.leaderboard-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 15px;
-    text-align: center;
-}
-
-/* 切換按鈕容器 */
-.leaderboard-switch {
-    display: inline-flex;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 5px;
-    border-radius: 50px;
-    position: relative;
+    padding: 15px 10px;
     margin: 10px 0;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    border-left: 4px solid #ff3333;
 }
 
-/* 切換按鈕樣式 */
-.switch-btn {
+.leaderboard-list .rank {
+    font-weight: bold;
+    color: #ffcc00;
+    min-width: 50px;
+}
+
+.leaderboard-list .name {
+    flex: 1;
+    font-weight: bold;
+}
+
+.leaderboard-list .score {
+    color: #00ff00;
+    font-weight: bold;
+    min-width: 120px;
+    text-align: right;
+}
+
+.leaderboard-list .date {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9em;
     min-width: 100px;
-    height: 40px;
-    background: transparent;
-    border: none;
-    padding: 0 20px;
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #666;
-    position: relative;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border-radius: 25px;
-    z-index: 1;
+    text-align: right;
 }
 
-/* 活動狀態和懸停效果 */
-.switch-btn.active {
-    color: #fff;
-    background: linear-gradient(145deg, #4CAF50, #45a049);
-    box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3);
-}
-
-.switch-btn:hover:not(.active) {
-    color: #4CAF50;
-    background: rgba(76, 175, 80, 0.1);
-}
-
-/* 手機版特別樣式 */
-@media screen and (max-width: 768px) {
-    .leaderboard-switch {
-        padding: 4px;
-    }
-
-    .switch-btn {
-        min-width: 80px;
-        height: 36px;
-        font-size: 15px;
-        padding: 0 15px;
-    }
-}
-
-/* 添加動畫效果 */
-.switch-btn {
-    overflow: hidden;
-}
-
-.switch-btn:after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: -100%;
-    background: linear-gradient(90deg, 
-        rgba(255,255,255,0) 0%, 
-        rgba(255,255,255,0.2) 50%, 
-        rgba(255,255,255,0) 100%);
-    transition: all 0.3s ease;
-}
-
-.switch-btn:hover:after {
-    left: 100%;
-}
-
-/* 按鈕點擊效果 */
-.switch-btn:active {
-    transform: scale(0.95);
-}
-
-/* 防止頁面捲動 */
-@media screen and (max-width: 768px) {
-    html, body {
-        height: 100%;
-        overflow: hidden;
-        position: fixed;
-        width: 100%;
-    }
-
+/* ===== 響應式設計 ===== */
+@media screen and (max-width: 480px) {
     .game-container {
-        height: 100%;
-        overflow: hidden;
-        position: relative;
-        margin: 0;
+        max-width: 100vw;
+    }
+
+    .canvas-container {
+        width: 100vw;
+        height: auto;
+        aspect-ratio: 9/16;
+        margin: 10px 0;
+    }
+
+    #game-canvas {
+        width: 100%;
+        height: auto;
+    }
+
+    .game-header {
         padding: 10px;
+        font-size: 0.9em;
     }
 
-    #game-area {
-        height: calc(100vh - 200px); /* 調整高度，留出空間給其他元素 */
-        margin-bottom: 60px;
+    .shot-buttons {
+        padding: 10px;
+        gap: 5px;
     }
 
-    .mobile-leaderboard {
-        /* 確保排行榜可以滾動 */
+    .shot-button {
+        max-width: 100px;
+        height: 70px;
+    }
+
+    .rules {
+        font-size: 0.9em;
+    }
+
+    .leaderboard-list {
         max-height: 50vh;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch; /* 為 iOS 提供平滑滾動 */
     }
 
-    /* 確保開始按鈕位置正確 */
-    #start-button {
-        position: fixed;
-        bottom: 80px;
+    .leaderboard-list li {
+        flex-wrap: wrap;
+        font-size: 0.9em;
+    }
+
+    .leaderboard-list .score,
+    .leaderboard-list .date {
+        min-width: auto;
     }
 }
 
-/* 模態框按鈕基本樣式 */
-#submit-score {
-    padding: 12px 30px;
-    font-size: 18px;
-    background: linear-gradient(145deg, #4CAF50, #45a049);
-    color: white;
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+/* ===== 滾動條樣式 ===== */
+.leaderboard-list::-webkit-scrollbar {
+    width: 8px;
 }
 
-/* 手機版模態框樣式 */
-@media screen and (max-width: 768px) {
-    #submit-score {
-        width: 80%;          /* 加寬按鈕 */
-        padding: 15px 30px;  /* 增加內邊距 */
-        font-size: 20px;     /* 加大字體 */
-        margin: 10px auto;   /* 置中對齊 */
-        border-radius: 30px; /* 更圓潤的邊角 */
-    }
+.leaderboard-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+}
 
-    .modal-content {
-        width: 90%;
-        padding: 25px;
-        border-radius: 15px;
-    }
+.leaderboard-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 51, 51, 0.5);
+    border-radius: 10px;
+}
 
-    .input-group {
-        margin: 25px 0;
-    }
-
-    .input-group input {
-        width: 80%;
-        padding: 12px;
-        font-size: 18px;
-        margin: 10px auto;
-        border-radius: 10px;
-        border: 2px solid #4CAF50;
-    }
+.leaderboard-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 51, 51, 0.8);
 }

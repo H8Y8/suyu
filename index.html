@@ -6,9 +6,9 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    
-    <title>孫叔殭屍防禦戰</title>
-    
+
+    <title>ShotZombie - 孫叔殭屍射擊</title>
+
     <!-- 完整的 favicon 設置 -->
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
@@ -17,82 +17,110 @@
     <link rel="apple-touch-icon" sizes="167x167" href="favicon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="孫叔殭屍防禦戰">
-    
+    <meta name="apple-mobile-web-app-title" content="ShotZombie">
+
     <!-- Android 設備 -->
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#000000">
-    
-    <link rel="stylesheet" href="styles.css?v=1.0.1">
-    <script type="module" src="firebase-config.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js"></script>
+    <meta name="theme-color" content="#8B0000">
+
+    <link rel="stylesheet" href="styles.css?v=3.0.0">
 </head>
 <body>
     <div class="game-container">
-        <div class="game-info">
-            <div class="score">消灭: <span id="score">0</span> 隻</div>
-            <div class="lives">生命: <span id="lives">3</span> ❤️</div>
-            <div class="wave">波數: <span id="wave">1</span></div>
-        </div>
-        
-        <div id="countdown" class="countdown hidden">3</div>
-        <div id="game-area">
-            <div class="base-line"></div>
-            <!-- 殭屍會從右邊出現 -->
+        <!-- 開始畫面 -->
+        <div id="menu-screen" class="screen">
+            <h1>🧟 SHOT ZOMBIE 🧟</h1>
+            <p class="instruction">點擊最接近底線的殭屍所在欄位！</p>
+            <div class="rules">
+                <h3>遊戲規則</h3>
+                <ul>
+                    <li>🎯 殭屍從上方往下移動</li>
+                    <li>⚡ 找出最接近底線的殭屍</li>
+                    <li>🔫 點擊對應欄位的 SHOT 按鈕</li>
+                    <li>✅ 命中得分 +10 × Combo倍率</li>
+                    <li>❌ 失誤扣分 -5 並清空Combo</li>
+                    <li>⏱️ 60秒挑戰你的反應速度</li>
+                </ul>
+            </div>
+            <button id="start-button" class="big-button">開始遊戲</button>
+            <button id="show-leaderboard" class="small-button">查看排行榜</button>
         </div>
 
-        <!-- 桌面版排行榜 -->
-        <div class="leaderboard desktop-leaderboard">
-            <div class="leaderboard-header">
-                <h2>排行榜</h2>
-                <div class="leaderboard-switch">
-                    <button id="local-btn" class="switch-btn active">本地</button>
-                    <button id="online-btn" class="switch-btn">線上</button>
+        <!-- 遊戲畫面 -->
+        <div id="game-screen" class="screen hidden">
+            <!-- 頂部資訊欄 -->
+            <div class="game-header">
+                <div class="info-left">
+                    <div class="time-display">⏱️ <span id="time-left">60</span>s</div>
+                </div>
+                <div class="info-center">
+                    <div class="score-display">💀 <span id="score">0</span></div>
+                    <div class="combo-display" id="combo-display">COMBO × <span id="combo">0</span></div>
+                </div>
+                <div class="info-right">
+                    <button id="pause-button" class="icon-button">⏸️</button>
                 </div>
             </div>
-            <ol id="leaderboard-list">
-            </ol>
-        </div>
 
-        <button id="start-button">開始遊戲</button>
-    </div>
-
-    <!-- 手機版排行榜 -->
-    <div class="leaderboard-container">
-        <button id="toggle-leaderboard" class="toggle-leaderboard-btn">
-            顯示排行榜 ▲
-        </button>
-        <div class="leaderboard mobile-leaderboard collapsed">
-            <div class="leaderboard-header">
-                <h2>排行榜</h2>
-                <div class="leaderboard-switch">
-                    <button id="local-btn-mobile" class="switch-btn active">本地</button>
-                    <button id="online-btn-mobile" class="switch-btn">線上</button>
+            <!-- Canvas 遊戲區域 -->
+            <div class="canvas-container">
+                <canvas id="game-canvas" width="360" height="640"></canvas>
+                <div class="lane-indicators">
+                    <div class="lane-label">LEFT</div>
+                    <div class="lane-label">CENTER</div>
+                    <div class="lane-label">RIGHT</div>
                 </div>
             </div>
-            <ol id="leaderboard-list-mobile">
-            </ol>
+
+            <!-- 底部射擊按鈕 -->
+            <div class="shot-buttons">
+                <button class="shot-button" data-column="0">
+                    <span class="button-label">LEFT</span>
+                    <span class="button-shot">SHOT</span>
+                </button>
+                <button class="shot-button" data-column="1">
+                    <span class="button-label">CENTER</span>
+                    <span class="button-shot">SHOT</span>
+                </button>
+                <button class="shot-button" data-column="2">
+                    <span class="button-label">RIGHT</span>
+                    <span class="button-shot">SHOT</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 遊戲結束畫面 -->
+        <div id="gameover-screen" class="screen hidden">
+            <h2>🎮 遊戲結束！</h2>
+            <div class="final-stats">
+                <p class="final-score">得分：<span id="final-score">0</span></p>
+                <p class="final-combo">最高Combo：<span id="final-combo">0</span></p>
+            </div>
+            <div class="input-group">
+                <label for="player-name">輸入名字：</label>
+                <input type="text" id="player-name" maxlength="10" placeholder="匿名玩家">
+            </div>
+            <button id="submit-score" class="big-button">提交分數</button>
+            <button id="play-again" class="small-button">再玩一次</button>
+        </div>
+
+        <!-- 排行榜畫面 -->
+        <div id="leaderboard-screen" class="screen hidden">
+            <h2>🏆 排行榜</h2>
+            <div class="leaderboard-switch">
+                <button id="local-btn" class="switch-btn active">本地</button>
+                <button id="online-btn" class="switch-btn">線上</button>
+            </div>
+            <div class="leaderboard-list">
+                <ol id="leaderboard-list"></ol>
+            </div>
+            <button id="back-to-menu" class="small-button">返回主選單</button>
         </div>
     </div>
 
     <audio id="hit-sound" src="god.mp3" preload="auto"></audio>
 
-    <div id="name-input-modal" class="modal hidden">
-        <div class="modal-content">
-            <h2>遊戲結束！</h2>
-            <p>消滅殭屍數：<span id="final-score"></span> 隻</p>
-            <p>存活波數：<span id="final-wave"></span> 波</p>
-            <div class="input-group">
-                <label for="player-name">請輸入你的名字：</label>
-                <input type="text" id="player-name" maxlength="10">
-            </div>
-            <button id="submit-score">提交分數</button>
-        </div>
-    </div>
-
-    <script type="module" src="game.js?v=1.0.1"></script>
+    <script type="module" src="game.js?v=3.0.0"></script>
 </body>
-</html> 
+</html>
