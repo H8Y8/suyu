@@ -22,13 +22,9 @@ class ShotZombieGame {
         this.combo = 0;
         this.maxCombo = 0;
         this.timeLeft = 60; // seconds
-
-        // 新的队列系统
-        this.zombieQueues = [[], [], []]; // 三条栏位的僵尸队列
-        this.zombieSize = 50; // 僵尸大小
-        this.queueSpacing = 50; // 队列间距（等于僵尸高度）
-        this.initialQueueLength = 5; // 初始队列长度
-
+        this.zombies = [];
+        this.lastSpawnTime = 0;
+        this.spawnInterval = 200; // ms (faster spawn)
         this.lastFrameTime = 0;
 
         // Canvas 設定
@@ -251,31 +247,33 @@ class ShotZombieGame {
         requestAnimationFrame(() => this.gameLoop());
     }
 
-    // ===== 更新僵尸动画 =====
-    updateZombieAnimations(deltaTime) {
-        const moveSpeed = 500; // pixels per second (fast smooth movement)
+    // ===== 殭屍生成 =====
+    spawnZombie() {
+        const columnIndex = Math.floor(Math.random() * this.columnCount);
+        const speed = 500 + Math.random() * 80; // 150-230 px/s (faster)
+        const zombie = new Zombie(columnIndex, 0, speed);
+        this.zombies.push(zombie);
+    }
 
-        this.zombieQueues.forEach(queue => {
-            queue.forEach(zombie => {
-                if (Math.abs(zombie.y - zombie.targetY) > 1) {
-                    zombie.isAnimating = true;
-                    const direction = zombie.targetY > zombie.y ? 1 : -1;
-                    const moveDistance = moveSpeed * deltaTime;
-                    zombie.y += direction * moveDistance;
+    // ===== 更新殭屍 =====
+    updateZombies(deltaTime) {
+        this.zombies.forEach(zombie => {
+            if (zombie.isAlive) {
+                zombie.y += zombie.speed * deltaTime;
+            }
+        });
+    }
 
-                    // Clamp to target
-                    if (direction > 0 && zombie.y >= zombie.targetY) {
-                        zombie.y = zombie.targetY;
-                        zombie.isAnimating = false;
-                    } else if (direction < 0 && zombie.y <= zombie.targetY) {
-                        zombie.y = zombie.targetY;
-                        zombie.isAnimating = false;
-                    }
-                } else {
-                    zombie.y = zombie.targetY;
-                    zombie.isAnimating = false;
-                }
-            });
+    // ===== 檢查殭屍到達底線 =====
+    checkZombiesReachBottom() {
+        this.zombies.forEach(zombie => {
+            if (zombie.isAlive && zombie.y >= this.bottomLine) {
+                zombie.isAlive = false;
+                // 扣時間
+                this.timeLeft = Math.max(0, this.timeLeft - 2);
+                // 顯示懲罰效果
+                this.showPenalty(zombie.columnIndex);
+            }
         });
     }
 
