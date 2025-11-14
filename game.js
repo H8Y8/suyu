@@ -1,343 +1,487 @@
 import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-class ZombieGame {
-    constructor() {
-        // 游戏基本属性
-        this.score = 0;
-        this.lives = 3;
-        this.wave = 1;
-        this.isPlaying = false;
-        this.zombies = [];
-        this.particles = [];
+// ===== Zombie 類別 =====
+class Zombie {
+    constructor(columnIndex, y, speed) {
+        this.columnIndex = columnIndex; // 0, 1, 2 (left, center, right)
+        this.y = y;
+        this.speed = speed; // pixels per second
+        this.isAlive = true;
+        this.size = 50; // zombie size
+    }
+}
 
-        // 游戏难度设置
-        this.zombieSpeed = 2; // 像素/帧
-        this.spawnInterval = 2000; // 毫秒
-        this.lanes = 3; // 行数
-        this.laneHeight = 0;
+// ===== ShotZombie 遊戲類別 =====
+class ShotZombieGame {
+    constructor() {
+        // 遊戲狀態
+        this.gameState = 'menu'; // 'menu' | 'playing' | 'paused' | 'gameover'
+        this.score = 0;
+        this.combo = 0;
+        this.maxCombo = 0;
+        this.timeLeft = 60; // seconds
+        this.zombies = [];
+        this.lastSpawnTime = 0;
+        this.spawnInterval = 900; // ms
+        this.lastFrameTime = 0;
+
+        // Canvas 設定
+        this.canvas = document.getElementById('game-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.canvasWidth = 360;
+        this.canvasHeight = 640;
+        this.columnCount = 3;
+        this.columnWidth = this.canvasWidth / this.columnCount;
+        this.bottomLine = this.canvasHeight - 80; // 底線位置
 
         // DOM 元素
-        this.gameArea = document.getElementById('game-area');
+        this.menuScreen = document.getElementById('menu-screen');
+        this.gameScreen = document.getElementById('game-screen');
+        this.gameoverScreen = document.getElementById('gameover-screen');
+        this.leaderboardScreen = document.getElementById('leaderboard-screen');
         this.scoreElement = document.getElementById('score');
-        this.livesElement = document.getElementById('lives');
-        this.waveElement = document.getElementById('wave');
-        this.startButton = document.getElementById('start-button');
-        this.hitSound = document.getElementById('hit-sound');
-        this.countdownElement = document.getElementById('countdown');
-        this.nameInputModal = document.getElementById('name-input-modal');
+        this.comboElement = document.getElementById('combo');
+        this.comboDisplay = document.getElementById('combo-display');
+        this.timeLeftElement = document.getElementById('time-left');
         this.finalScoreElement = document.getElementById('final-score');
-        this.finalWaveElement = document.getElementById('final-wave');
+        this.finalComboElement = document.getElementById('final-combo');
         this.playerNameInput = document.getElementById('player-name');
-        this.submitScoreButton = document.getElementById('submit-score');
+        this.hitSound = document.getElementById('hit-sound');
 
-        // 初始化
-        this.initializeCanvas();
-        this.addEventListeners();
-        this.setupFirebase();
-        this.setupLeaderboard();
-    }
+        // 圖片資源
+        this.zombieImg = new Image();
+        this.zombieImg.src = 'suyu.jpg';
 
-    initializeCanvas() {
-        this.canvas = document.createElement('canvas');
-        this.canvas.className = 'particle-canvas';
-        this.ctx = this.canvas.getContext('2d');
-        this.gameArea.appendChild(this.canvas);
-        this.resizeCanvas();
-
-        window.addEventListener('resize', () => this.resizeCanvas());
-    }
-
-    resizeCanvas() {
-        this.canvas.width = this.gameArea.clientWidth;
-        this.canvas.height = this.gameArea.clientHeight;
-        this.laneHeight = this.canvas.height / this.lanes;
-    }
-
-    addEventListeners() {
-        this.startButton.addEventListener('click', () => this.startGame());
-        this.submitScoreButton.addEventListener('click', () => this.submitScore());
-
-        // 排行榜切换按钮
-        const toggleBtn = document.getElementById('toggle-leaderboard');
-        const mobileLeaderboard = document.querySelector('.mobile-leaderboard');
-        const startButton = document.getElementById('start-button');
-
-        if (toggleBtn && mobileLeaderboard) {
-            toggleBtn.addEventListener('click', () => {
-                mobileLeaderboard.classList.toggle('collapsed');
-                startButton.classList.toggle('hidden-mobile');
-                toggleBtn.textContent = mobileLeaderboard.classList.contains('collapsed')
-                    ? '顯示排行榜 ▲'
-                    : '隱藏排行榜 ▼';
-            });
-        }
-    }
-
-    async startGame() {
-        // 倒计时
-        this.countdownElement.classList.remove('hidden');
-        for (let i = 3; i > 0; i--) {
-            this.countdownElement.textContent = i;
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-        this.countdownElement.classList.add('hidden');
-
-        // 重置游戏状态
-        this.score = 0;
-        this.lives = 3;
-        this.wave = 1;
-        this.isPlaying = true;
-        this.zombies = [];
-        this.particles = [];
-        this.zombieSpeed = 2;
-        this.spawnInterval = 2000;
-
-        this.updateUI();
-        this.startButton.style.display = 'none';
-
-        // 开始游戏循环
-        this.spawnZombies();
-        this.gameLoop();
-    }
-
-    spawnZombies() {
-        if (!this.isPlaying) return;
-
-        // 随机选择一条路径
-        const lane = Math.floor(Math.random() * this.lanes);
-
-        // 创建僵尸
-        const zombie = document.createElement('div');
-        zombie.className = 'zombie';
-
-        const img = document.createElement('img');
-        img.src = 'suyu.jpg';
-        zombie.appendChild(img);
-
-        // 设置位置（从右边开始）
-        const startX = this.gameArea.clientWidth;
-        const startY = lane * this.laneHeight + (this.laneHeight - 60) / 2;
-
-        zombie.style.left = startX + 'px';
-        zombie.style.top = startY + 'px';
-
-        // 添加点击事件
-        zombie.addEventListener('click', () => this.hitZombie(zombie));
-
-        this.gameArea.appendChild(zombie);
-
-        // 保存僵尸数据
-        this.zombies.push({
-            element: zombie,
-            x: startX,
-            y: startY,
-            lane: lane,
-            speed: this.zombieSpeed
-        });
-
-        // 继续生成下一个僵尸
-        this.spawnTimeout = setTimeout(() => this.spawnZombies(), this.spawnInterval);
-    }
-
-    gameLoop() {
-        if (!this.isPlaying) return;
-
-        // 移动所有僵尸
-        for (let i = this.zombies.length - 1; i >= 0; i--) {
-            const zombie = this.zombies[i];
-            zombie.x -= zombie.speed;
-            zombie.element.style.left = zombie.x + 'px';
-
-            // 检查是否到达左边（防线被突破）
-            if (zombie.x < -60) {
-                this.zombies.splice(i, 1);
-                zombie.element.remove();
-                this.loseLife();
-            }
-        }
-
-        // 绘制粒子效果
-        this.animateParticles();
-
-        // 继续循环
-        this.animationFrame = requestAnimationFrame(() => this.gameLoop());
-    }
-
-    hitZombie(zombieElement) {
-        if (!this.isPlaying) return;
-
-        // 找到对应的僵尸数据
-        const index = this.zombies.findIndex(z => z.element === zombieElement);
-        if (index === -1) return;
-
-        const zombie = this.zombies[index];
-
-        // 播放音效
-        this.hitSound.currentTime = 0;
-        this.hitSound.play();
-
-        // 创建粒子效果
-        const rect = zombieElement.getBoundingClientRect();
-        const gameAreaRect = this.gameArea.getBoundingClientRect();
-        const x = rect.left + rect.width / 2 - gameAreaRect.left;
-        const y = rect.top + rect.height / 2 - gameAreaRect.top;
-        this.createParticles(x, y);
-
-        // 移除僵尸
-        this.zombies.splice(index, 1);
-        zombieElement.remove();
-
-        // 增加分数
-        this.score++;
-        this.updateUI();
-
-        // 检查是否升级波数
-        if (this.score % 10 === 0) {
-            this.nextWave();
-        }
-    }
-
-    loseLife() {
-        this.lives--;
-        this.updateUI();
-
-        if (this.lives <= 0) {
-            this.endGame();
-        }
-    }
-
-    nextWave() {
-        this.wave++;
-        this.zombieSpeed += 0.5; // 增加速度
-        this.spawnInterval = Math.max(800, this.spawnInterval - 200); // 加快生成速度
-        this.updateUI();
-    }
-
-    updateUI() {
-        this.scoreElement.textContent = this.score;
-        this.livesElement.textContent = this.lives;
-        this.waveElement.textContent = this.wave;
-    }
-
-    endGame() {
-        this.isPlaying = false;
-
-        // 清除定时器
-        if (this.spawnTimeout) clearTimeout(this.spawnTimeout);
-        if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
-
-        // 移除所有僵尸
-        this.zombies.forEach(zombie => zombie.element.remove());
-        this.zombies = [];
-
-        // 显示结束弹窗
-        this.finalScoreElement.textContent = this.score;
-        this.finalWaveElement.textContent = this.wave;
-        this.nameInputModal.classList.remove('hidden');
-        this.startButton.style.display = 'block';
-    }
-
-    createParticles(x, y) {
-        const particleCount = 12;
-        const baseSize = 20;
-
-        for (let i = 0; i < particleCount; i++) {
-            const angle = (Math.PI * 2 / particleCount) * i;
-            const velocity = 3;
-
-            const img = new Image();
-            img.src = 'suyu.jpg';
-
-            this.particles.push({
-                x: x,
-                y: y,
-                vx: Math.cos(angle) * velocity,
-                vy: Math.sin(angle) * velocity,
-                rotation: Math.random() * 360,
-                size: baseSize,
-                life: 1,
-                img: img
-            });
-        }
-    }
-
-    animateParticles() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        for (let i = this.particles.length - 1; i >= 0; i--) {
-            const p = this.particles[i];
-            p.x += p.vx;
-            p.y += p.vy;
-            p.rotation += 5;
-            p.life -= 0.02;
-            p.size *= 0.99;
-
-            if (p.life <= 0) {
-                this.particles.splice(i, 1);
-                continue;
-            }
-
-            this.ctx.save();
-            this.ctx.translate(p.x, p.y);
-            this.ctx.rotate(p.rotation * Math.PI / 180);
-            this.ctx.globalAlpha = p.life;
-            this.ctx.beginPath();
-            this.ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
-            this.ctx.clip();
-            this.ctx.drawImage(p.img, -p.size / 2, -p.size / 2, p.size, p.size);
-            this.ctx.restore();
-        }
-    }
-
-    setupFirebase() {
+        // Firebase
         this.database = getDatabase();
-        this.leaderboardRef = ref(this.database, 'zombie-leaderboard');
-    }
-
-    setupLeaderboard() {
+        this.leaderboardRef = ref(this.database, 'shotzombie-leaderboard');
         this.isLocalMode = true;
         this.localLeaderboard = [];
         this.onlineLeaderboard = [];
 
-        this.initLeaderboardSwitches();
-        this.loadLocalLeaderboard();
-        this.startOnlineLeaderboardListener();
+        this.init();
     }
 
-    initLeaderboardSwitches() {
-        const localBtn = document.getElementById('local-btn');
-        const onlineBtn = document.getElementById('online-btn');
-        const localBtnMobile = document.getElementById('local-btn-mobile');
-        const onlineBtnMobile = document.getElementById('online-btn-mobile');
+    init() {
+        // 按鈕事件
+        document.getElementById('start-button').addEventListener('click', () => this.startGame());
+        document.getElementById('show-leaderboard').addEventListener('click', () => this.showLeaderboard());
+        document.getElementById('submit-score').addEventListener('click', () => this.submitScore());
+        document.getElementById('play-again').addEventListener('click', () => this.restartGame());
+        document.getElementById('back-to-menu').addEventListener('click', () => this.showMenu());
+        document.getElementById('pause-button').addEventListener('click', () => this.togglePause());
 
-        const switchButtons = [
-            [localBtn, onlineBtn],
-            [localBtnMobile, onlineBtnMobile]
-        ];
+        // 射擊按鈕
+        document.querySelectorAll('.shot-button').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const column = parseInt(e.currentTarget.getAttribute('data-column'));
+                this.handleShot(column);
+            });
+        });
 
-        switchButtons.forEach(([localButton, onlineButton]) => {
-            if (localButton && onlineButton) {
-                localButton.addEventListener('click', () => {
-                    this.isLocalMode = true;
-                    localButton.classList.add('active');
-                    onlineButton.classList.remove('active');
-                    this.displayLeaderboard();
-                });
+        // 排行榜切換
+        document.getElementById('local-btn').addEventListener('click', () => this.switchLeaderboard(true));
+        document.getElementById('online-btn').addEventListener('click', () => this.switchLeaderboard(false));
 
-                onlineButton.addEventListener('click', () => {
-                    this.isLocalMode = false;
-                    onlineButton.classList.add('active');
-                    localButton.classList.remove('active');
-                    this.displayLeaderboard();
-                });
+        // 載入排行榜
+        this.loadLocalLeaderboard();
+        this.startOnlineLeaderboardListener();
+
+        // 繪製初始畫面
+        this.drawLanes();
+    }
+
+    // ===== 畫面切換 =====
+    showScreen(screen) {
+        this.menuScreen.classList.add('hidden');
+        this.gameScreen.classList.add('hidden');
+        this.gameoverScreen.classList.add('hidden');
+        this.leaderboardScreen.classList.add('hidden');
+        screen.classList.remove('hidden');
+    }
+
+    showMenu() {
+        this.showScreen(this.menuScreen);
+        this.gameState = 'menu';
+    }
+
+    showLeaderboard() {
+        this.showScreen(this.leaderboardScreen);
+        this.displayLeaderboard();
+    }
+
+    // ===== 遊戲開始 =====
+    startGame() {
+        this.showScreen(this.gameScreen);
+        this.gameState = 'playing';
+        this.score = 0;
+        this.combo = 0;
+        this.maxCombo = 0;
+        this.timeLeft = 60;
+        this.zombies = [];
+        this.lastSpawnTime = 0;
+        this.lastFrameTime = performance.now();
+        this.updateUI();
+        this.gameLoop();
+    }
+
+    restartGame() {
+        this.startGame();
+    }
+
+    togglePause() {
+        if (this.gameState === 'playing') {
+            this.gameState = 'paused';
+            document.getElementById('pause-button').textContent = '▶️';
+        } else if (this.gameState === 'paused') {
+            this.gameState = 'playing';
+            document.getElementById('pause-button').textContent = '⏸️';
+            this.lastFrameTime = performance.now();
+            this.gameLoop();
+        }
+    }
+
+    // ===== 主遊戲循環 =====
+    gameLoop() {
+        if (this.gameState !== 'playing') return;
+
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - this.lastFrameTime) / 1000; // convert to seconds
+        this.lastFrameTime = currentTime;
+
+        // 更新時間
+        this.timeLeft -= deltaTime;
+        if (this.timeLeft <= 0) {
+            this.endGame();
+            return;
+        }
+
+        // 生成殭屍
+        if (currentTime - this.lastSpawnTime > this.spawnInterval) {
+            this.spawnZombie();
+            this.lastSpawnTime = currentTime;
+        }
+
+        // 更新殭屍位置
+        this.updateZombies(deltaTime);
+
+        // 檢查殭屍是否到達底線
+        this.checkZombiesReachBottom();
+
+        // 繪製畫面
+        this.draw();
+
+        // 更新UI
+        this.updateUI();
+
+        // 繼續循環
+        requestAnimationFrame(() => this.gameLoop());
+    }
+
+    // ===== 殭屍生成 =====
+    spawnZombie() {
+        const columnIndex = Math.floor(Math.random() * this.columnCount);
+        const speed = 80 + Math.random() * 40; // 80-120 px/s
+        const zombie = new Zombie(columnIndex, 0, speed);
+        this.zombies.push(zombie);
+    }
+
+    // ===== 更新殭屍 =====
+    updateZombies(deltaTime) {
+        this.zombies.forEach(zombie => {
+            if (zombie.isAlive) {
+                zombie.y += zombie.speed * deltaTime;
             }
         });
     }
 
-    loadLocalLeaderboard() {
-        const saved = localStorage.getItem('zombieGameLeaderboard');
-        this.localLeaderboard = saved ? JSON.parse(saved) : [];
+    // ===== 檢查殭屍到達底線 =====
+    checkZombiesReachBottom() {
+        this.zombies.forEach(zombie => {
+            if (zombie.isAlive && zombie.y >= this.bottomLine) {
+                zombie.isAlive = false;
+                // 扣時間
+                this.timeLeft = Math.max(0, this.timeLeft - 2);
+                // 顯示懲罰效果
+                this.showPenalty(zombie.columnIndex);
+            }
+        });
+
+        // 移除已死亡且超出畫面的殭屍
+        this.zombies = this.zombies.filter(z => z.isAlive || z.y < this.canvasHeight + 100);
+    }
+
+    // ===== 找出全域最接近底線的殭屍 =====
+    getGlobalNearestZombie() {
+        let nearest = null;
+        let minDistance = Infinity;
+
+        this.zombies.forEach(zombie => {
+            if (!zombie.isAlive) return;
+            const distance = this.bottomLine - zombie.y;
+            if (distance >= 0 && distance < minDistance) {
+                minDistance = distance;
+                nearest = zombie;
+            }
+        });
+
+        return nearest;
+    }
+
+    // ===== 找出指定欄位最接近底線的殭屍 =====
+    getColumnNearestZombie(columnIndex) {
+        let nearest = null;
+        let minDistance = Infinity;
+
+        this.zombies.forEach(zombie => {
+            if (!zombie.isAlive || zombie.columnIndex !== columnIndex) return;
+            const distance = this.bottomLine - zombie.y;
+            if (distance >= 0 && distance < minDistance) {
+                minDistance = distance;
+                nearest = zombie;
+            }
+        });
+
+        return nearest;
+    }
+
+    // ===== 射擊處理 =====
+    handleShot(columnIndex) {
+        if (this.gameState !== 'playing') return;
+
+        // 找出全域最近的殭屍
+        const globalNearest = this.getGlobalNearestZombie();
+        if (!globalNearest) {
+            // 沒有殭屍，視為miss
+            this.miss(columnIndex);
+            return;
+        }
+
+        // 找出該欄最近的殭屍
+        const columnNearest = this.getColumnNearestZombie(columnIndex);
+        if (!columnNearest) {
+            // 該欄沒有殭屍，miss
+            this.miss(columnIndex);
+            return;
+        }
+
+        // 判斷是否命中
+        if (globalNearest === columnNearest && globalNearest.columnIndex === columnIndex) {
+            this.hit(columnNearest, columnIndex);
+        } else {
+            this.miss(columnIndex);
+        }
+    }
+
+    // ===== 命中 =====
+    hit(zombie, columnIndex) {
+        // 消除殭屍
+        zombie.isAlive = false;
+
+        // 播放音效
+        this.hitSound.currentTime = 0;
+        this.hitSound.play().catch(() => {});
+
+        // 增加combo
+        this.combo++;
+        this.maxCombo = Math.max(this.maxCombo, this.combo);
+
+        // 計算倍率
+        const multiplier = 1 + Math.floor(this.combo / 5) * 0.5;
+
+        // 增加分數
+        const points = Math.floor(10 * multiplier);
+        this.score += points;
+
+        // 顯示命中效果
+        this.showHitEffect(columnIndex, points);
+
+        // 更新combo顯示
+        if (this.combo > 0) {
+            this.comboDisplay.classList.add('active');
+        }
+    }
+
+    // ===== 失誤 =====
+    miss(columnIndex) {
+        // 扣分
+        this.score = Math.max(0, this.score - 5);
+
+        // 清空combo
+        this.combo = 0;
+        this.comboDisplay.classList.remove('active');
+
+        // 顯示miss效果
+        this.showMissEffect(columnIndex);
+    }
+
+    // ===== 顯示命中效果 =====
+    showHitEffect(columnIndex, points) {
+        const button = document.querySelector(`.shot-button[data-column="${columnIndex}"]`);
+        button.classList.add('hit');
+        setTimeout(() => button.classList.remove('hit'), 200);
+
+        // 顯示分數飄字
+        this.showFloatingText(columnIndex, `+${points}`, '#00ff00');
+    }
+
+    // ===== 顯示失誤效果 =====
+    showMissEffect(columnIndex) {
+        const button = document.querySelector(`.shot-button[data-column="${columnIndex}"]`);
+        button.classList.add('miss');
+        setTimeout(() => button.classList.remove('miss'), 200);
+
+        // 顯示失誤飄字
+        this.showFloatingText(columnIndex, 'MISS!', '#ff0000');
+    }
+
+    // ===== 顯示懲罰效果 =====
+    showPenalty(columnIndex) {
+        this.showFloatingText(columnIndex, '-2s', '#ff6600');
+    }
+
+    // ===== 顯示飄字 =====
+    showFloatingText(columnIndex, text, color) {
+        const x = (columnIndex + 0.5) * this.columnWidth;
+        const y = this.bottomLine;
+
+        const textElement = document.createElement('div');
+        textElement.className = 'floating-text';
+        textElement.textContent = text;
+        textElement.style.left = x + 'px';
+        textElement.style.top = y + 'px';
+        textElement.style.color = color;
+
+        const container = document.querySelector('.canvas-container');
+        container.appendChild(textElement);
+
+        setTimeout(() => textElement.remove(), 1000);
+    }
+
+    // ===== 繪製 =====
+    draw() {
+        // 清空畫面
+        this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+
+        // 繪製欄位分隔線
+        this.drawLanes();
+
+        // 繪製底線
+        this.drawBottomLine();
+
+        // 繪製殭屍
+        this.drawZombies();
+
+        // 標記最接近的殭屍
+        this.highlightNearestZombie();
+    }
+
+    drawLanes() {
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        this.ctx.lineWidth = 2;
+
+        for (let i = 1; i < this.columnCount; i++) {
+            const x = i * this.columnWidth;
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, 0);
+            this.ctx.lineTo(x, this.canvasHeight);
+            this.ctx.stroke();
+        }
+    }
+
+    drawBottomLine() {
+        const gradient = this.ctx.createLinearGradient(0, this.bottomLine - 10, 0, this.bottomLine + 10);
+        gradient.addColorStop(0, 'rgba(255, 0, 0, 0)');
+        gradient.addColorStop(0.5, 'rgba(255, 0, 0, 0.8)');
+        gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, this.bottomLine - 10, this.canvasWidth, 20);
+    }
+
+    drawZombies() {
+        this.zombies.forEach(zombie => {
+            if (!zombie.isAlive) return;
+
+            const x = (zombie.columnIndex + 0.5) * this.columnWidth;
+            const y = zombie.y;
+
+            // 繪製殭屍
+            this.ctx.save();
+            this.ctx.translate(x, y);
+
+            // 殭屍圓形邊框
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, zombie.size / 2, 0, Math.PI * 2);
+            this.ctx.strokeStyle = 'rgba(139, 0, 0, 0.8)';
+            this.ctx.lineWidth = 3;
+            this.ctx.stroke();
+            this.ctx.clip();
+
+            // 繪製殭屍圖片
+            this.ctx.drawImage(
+                this.zombieImg,
+                -zombie.size / 2,
+                -zombie.size / 2,
+                zombie.size,
+                zombie.size
+            );
+
+            this.ctx.restore();
+        });
+    }
+
+    highlightNearestZombie() {
+        const nearest = this.getGlobalNearestZombie();
+        if (!nearest) return;
+
+        const x = (nearest.columnIndex + 0.5) * this.columnWidth;
+        const y = nearest.y;
+
+        // 繪製高亮圈
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, nearest.size / 2 + 5, 0, Math.PI * 2);
+        this.ctx.strokeStyle = 'rgba(255, 255, 0, 0.8)';
+        this.ctx.lineWidth = 4;
+        this.ctx.stroke();
+        this.ctx.restore();
+
+        // 繪製指示箭頭
+        this.ctx.save();
+        this.ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
+        this.ctx.font = 'bold 30px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('▼', x, this.bottomLine + 40);
+        this.ctx.restore();
+    }
+
+    // ===== 更新UI =====
+    updateUI() {
+        this.scoreElement.textContent = this.score;
+        this.comboElement.textContent = this.combo;
+        this.timeLeftElement.textContent = Math.ceil(this.timeLeft);
+    }
+
+    // ===== 遊戲結束 =====
+    endGame() {
+        this.gameState = 'gameover';
+        this.finalScoreElement.textContent = this.score;
+        this.finalComboElement.textContent = this.maxCombo;
+        this.showScreen(this.gameoverScreen);
+    }
+
+    // ===== 排行榜 =====
+    switchLeaderboard(isLocal) {
+        this.isLocalMode = isLocal;
+        document.getElementById('local-btn').classList.toggle('active', isLocal);
+        document.getElementById('online-btn').classList.toggle('active', !isLocal);
         this.displayLeaderboard();
+    }
+
+    loadLocalLeaderboard() {
+        const saved = localStorage.getItem('shotzombieLeaderboard');
+        this.localLeaderboard = saved ? JSON.parse(saved) : [];
     }
 
     startOnlineLeaderboardListener() {
@@ -353,41 +497,30 @@ class ZombieGame {
                 this.onlineLeaderboard.push(childSnapshot.val());
             });
             this.onlineLeaderboard.sort((a, b) => b.score - a.score);
-            if (!this.isLocalMode) {
-                this.displayLeaderboard();
-            }
         });
     }
 
     displayLeaderboard() {
-        const desktopList = document.getElementById('leaderboard-list');
-        const mobileList = document.getElementById('leaderboard-list-mobile');
-
+        const list = document.getElementById('leaderboard-list');
         const currentLeaderboard = this.isLocalMode ?
-            this.localLeaderboard.slice(0, 5) :
-            this.onlineLeaderboard.slice(0, 5);
+            this.localLeaderboard.slice(0, 10) :
+            this.onlineLeaderboard.slice(0, 10);
 
-        const updateList = (list) => {
-            if (!list) return;
-            list.innerHTML = '';
+        list.innerHTML = '';
 
-            currentLeaderboard.forEach((entry, index) => {
-                const li = document.createElement('li');
-                const date = new Date(entry.play_date);
-                const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+        currentLeaderboard.forEach((entry, index) => {
+            const li = document.createElement('li');
+            const date = new Date(entry.play_date);
+            const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-                li.innerHTML = `
-                    <span class="rank">第 ${index + 1} 名</span>
-                    <span class="name">${entry.player_name}</span>
-                    <span class="score">${entry.score} 隻 (${entry.wave}波)</span>
-                    <span class="date">${formattedDate}</span>
-                `;
-                list.appendChild(li);
-            });
-        };
-
-        updateList(desktopList);
-        updateList(mobileList);
+            li.innerHTML = `
+                <span class="rank">#${index + 1}</span>
+                <span class="name">${entry.player_name}</span>
+                <span class="score">${entry.score} 分 (${entry.combo} combo)</span>
+                <span class="date">${formattedDate}</span>
+            `;
+            list.appendChild(li);
+        });
     }
 
     async submitScore() {
@@ -395,7 +528,7 @@ class ZombieGame {
         const scoreEntry = {
             player_name: playerName,
             score: this.score,
-            wave: this.wave,
+            combo: this.maxCombo,
             play_date: new Date().toISOString()
         };
 
@@ -403,24 +536,21 @@ class ZombieGame {
         this.localLeaderboard.push({...scoreEntry});
         this.localLeaderboard.sort((a, b) => b.score - a.score);
         this.localLeaderboard = this.localLeaderboard.slice(0, 10);
-        localStorage.setItem('zombieGameLeaderboard', JSON.stringify(this.localLeaderboard));
+        localStorage.setItem('shotzombieLeaderboard', JSON.stringify(this.localLeaderboard));
 
-        // 保存到线上
+        // 保存到線上
         try {
             await push(this.leaderboardRef, scoreEntry);
         } catch (error) {
             console.error('Error saving online score:', error);
         }
 
-        this.nameInputModal.classList.add('hidden');
         this.playerNameInput.value = '';
-        this.displayLeaderboard();
+        this.showMenu();
     }
 }
 
-// 初始化游戏
-export function initGame() {
-    const game = new ZombieGame();
-}
-
-document.addEventListener('DOMContentLoaded', initGame);
+// 初始化遊戲
+document.addEventListener('DOMContentLoaded', () => {
+    new ShotZombieGame();
+});

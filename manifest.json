@@ -1,7 +1,7 @@
 {
-  "name": "孫叔殭屍防禦戰",
-  "short_name": "殭屍防禦",
-  "version": "2.0.0",
+  "name": "ShotZombie - 孫叔殭屍射擊",
+  "short_name": "ShotZombie",
+  "version": "3.0.0",
   "icons": [
     {
       "src": "favicon.png",
@@ -14,7 +14,7 @@
       "type": "image/png"
     }
   ],
-  "start_url": "/?v=2.0.0",
+  "start_url": "/?v=3.0.0",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000"
