@@ -14,6 +14,8 @@ class Zombie {
 // ===== ShotZombie 遊戲類別 =====
 class ShotZombieGame {
     constructor() {
+        console.log('🚀 Creating ShotZombie Game...');
+
         // 遊戲狀態
         this.gameState = 'menu'; // 'menu' | 'playing' | 'paused' | 'gameover'
         this.score = 0;
@@ -27,6 +29,10 @@ class ShotZombieGame {
 
         // Canvas 設定
         this.canvas = document.getElementById('game-canvas');
+        if (!this.canvas) {
+            console.error('Canvas not found!');
+            return;
+        }
         this.ctx = this.canvas.getContext('2d');
         this.canvasWidth = 360;
         this.canvasHeight = 640;
@@ -52,9 +58,16 @@ class ShotZombieGame {
         this.zombieImg = new Image();
         this.zombieImg.src = 'suyu.jpg';
 
-        // Firebase
-        this.database = getDatabase();
-        this.leaderboardRef = ref(this.database, 'shotzombie-leaderboard');
+        // Firebase (may fail, that's OK)
+        try {
+            this.database = getDatabase();
+            this.leaderboardRef = ref(this.database, 'shotzombie-leaderboard');
+        } catch (error) {
+            console.warn('Firebase not available:', error);
+            this.database = null;
+            this.leaderboardRef = null;
+        }
+
         this.isLocalMode = true;
         this.localLeaderboard = [];
         this.onlineLeaderboard = [];
@@ -63,32 +76,73 @@ class ShotZombieGame {
     }
 
     init() {
+        console.log('🎮 ShotZombie Game Initializing...');
+
         // 按鈕事件
-        document.getElementById('start-button').addEventListener('click', () => this.startGame());
-        document.getElementById('show-leaderboard').addEventListener('click', () => this.showLeaderboard());
-        document.getElementById('submit-score').addEventListener('click', () => this.submitScore());
-        document.getElementById('play-again').addEventListener('click', () => this.restartGame());
-        document.getElementById('back-to-menu').addEventListener('click', () => this.showMenu());
-        document.getElementById('pause-button').addEventListener('click', () => this.togglePause());
+        const startBtn = document.getElementById('start-button');
+        if (startBtn) {
+            startBtn.addEventListener('click', () => {
+                console.log('Start button clicked');
+                this.startGame();
+            });
+        }
+
+        const leaderboardBtn = document.getElementById('show-leaderboard');
+        if (leaderboardBtn) {
+            leaderboardBtn.addEventListener('click', () => this.showLeaderboard());
+        }
+
+        const submitBtn = document.getElementById('submit-score');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', () => this.submitScore());
+        }
+
+        const playAgainBtn = document.getElementById('play-again');
+        if (playAgainBtn) {
+            playAgainBtn.addEventListener('click', () => this.restartGame());
+        }
+
+        const backBtn = document.getElementById('back-to-menu');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => this.showMenu());
+        }
+
+        const pauseBtn = document.getElementById('pause-button');
+        if (pauseBtn) {
+            pauseBtn.addEventListener('click', () => this.togglePause());
+        }
 
         // 射擊按鈕
-        document.querySelectorAll('.shot-button').forEach(btn => {
+        const shotButtons = document.querySelectorAll('.shot-button');
+        console.log(`Found ${shotButtons.length} shot buttons`);
+        shotButtons.forEach((btn, index) => {
             btn.addEventListener('click', (e) => {
                 const column = parseInt(e.currentTarget.getAttribute('data-column'));
+                console.log(`Shot button ${column} clicked`);
                 this.handleShot(column);
             });
         });
 
         // 排行榜切換
-        document.getElementById('local-btn').addEventListener('click', () => this.switchLeaderboard(true));
-        document.getElementById('online-btn').addEventListener('click', () => this.switchLeaderboard(false));
+        const localBtn = document.getElementById('local-btn');
+        const onlineBtn = document.getElementById('online-btn');
+        if (localBtn) localBtn.addEventListener('click', () => this.switchLeaderboard(true));
+        if (onlineBtn) onlineBtn.addEventListener('click', () => this.switchLeaderboard(false));
 
         // 載入排行榜
         this.loadLocalLeaderboard();
-        this.startOnlineLeaderboardListener();
+
+        // Firebase 可能失敗，不阻塞遊戲
+        try {
+            this.startOnlineLeaderboardListener();
+        } catch (error) {
+            console.warn('Firebase initialization failed, using local leaderboard only', error);
+        }
 
         // 繪製初始畫面
         this.drawLanes();
+
+        console.log('✅ Game initialized successfully');
     }
 
     // ===== 畫面切換 =====
@@ -485,19 +539,28 @@ class ShotZombieGame {
     }
 
     startOnlineLeaderboardListener() {
-        const leaderboardQuery = query(
-            this.leaderboardRef,
-            orderByChild('score'),
-            limitToLast(10)
-        );
+        if (!this.database || !this.leaderboardRef) {
+            console.warn('Firebase not available, skipping online leaderboard');
+            return;
+        }
 
-        onValue(leaderboardQuery, (snapshot) => {
-            this.onlineLeaderboard = [];
-            snapshot.forEach((childSnapshot) => {
-                this.onlineLeaderboard.push(childSnapshot.val());
+        try {
+            const leaderboardQuery = query(
+                this.leaderboardRef,
+                orderByChild('score'),
+                limitToLast(10)
+            );
+
+            onValue(leaderboardQuery, (snapshot) => {
+                this.onlineLeaderboard = [];
+                snapshot.forEach((childSnapshot) => {
+                    this.onlineLeaderboard.push(childSnapshot.val());
+                });
+                this.onlineLeaderboard.sort((a, b) => b.score - a.score);
             });
-            this.onlineLeaderboard.sort((a, b) => b.score - a.score);
-        });
+        } catch (error) {
+            console.error('Failed to setup online leaderboard listener:', error);
+        }
     }
 
     displayLeaderboard() {
@@ -539,10 +602,13 @@ class ShotZombieGame {
         localStorage.setItem('shotzombieLeaderboard', JSON.stringify(this.localLeaderboard));
 
         // 保存到線上
-        try {
-            await push(this.leaderboardRef, scoreEntry);
-        } catch (error) {
-            console.error('Error saving online score:', error);
+        if (this.database && this.leaderboardRef) {
+            try {
+                await push(this.leaderboardRef, scoreEntry);
+                console.log('Score saved to online leaderboard');
+            } catch (error) {
+                console.error('Error saving online score:', error);
+            }
         }
 
         this.playerNameInput.value = '';
