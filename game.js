@@ -57,6 +57,14 @@ class ShotZombieGame {
         // 圖片資源
         this.zombieImg = new Image();
         this.zombieImg.src = 'suyu.jpg';
+        this.zombieImgLoaded = false;
+        this.zombieImg.onload = () => {
+            console.log('✅ Zombie image loaded successfully');
+            this.zombieImgLoaded = true;
+        };
+        this.zombieImg.onerror = () => {
+            console.error('❌ Failed to load zombie image');
+        };
 
         // Firebase (may fail, that's OK)
         try {
@@ -512,22 +520,33 @@ class ShotZombieGame {
                 this.ctx.save();
                 this.ctx.translate(x, zombie.y);
 
-                // 殭屍圓形邊框
-                this.ctx.beginPath();
-                this.ctx.arc(0, 0, zombie.size / 2, 0, Math.PI * 2);
-                this.ctx.strokeStyle = 'rgba(139, 0, 0, 0.8)';
-                this.ctx.lineWidth = 3;
-                this.ctx.stroke();
-                this.ctx.clip();
+                // 繪製殭屍圖片（如果已加載）
+                if (this.zombieImgLoaded && this.zombieImg.complete) {
+                    // 殭屍圓形邊框
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, zombie.size / 2, 0, Math.PI * 2);
+                    this.ctx.strokeStyle = 'rgba(139, 0, 0, 0.8)';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.stroke();
+                    this.ctx.clip();
 
-                // 繪製殭屍圖片
-                this.ctx.drawImage(
-                    this.zombieImg,
-                    -zombie.size / 2,
-                    -zombie.size / 2,
-                    zombie.size,
-                    zombie.size
-                );
+                    this.ctx.drawImage(
+                        this.zombieImg,
+                        -zombie.size / 2,
+                        -zombie.size / 2,
+                        zombie.size,
+                        zombie.size
+                    );
+                } else {
+                    // 如果圖片未加載，繪製紅色圓形作為佔位符
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, zombie.size / 2, 0, Math.PI * 2);
+                    this.ctx.fillStyle = '#8B0000';
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.stroke();
+                }
 
                 this.ctx.restore();
             });
