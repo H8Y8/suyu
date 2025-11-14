@@ -179,6 +179,10 @@ class ShotZombieGame {
     // ===== 遊戲開始 =====
     startGame() {
         console.log('🎮 Starting new game with queue system');
+        console.log('Canvas:', this.canvas);
+        console.log('Context:', this.ctx);
+        console.log('CanvasWidth:', this.canvasWidth, 'CanvasHeight:', this.canvasHeight);
+
         this.showScreen(this.gameScreen);
         this.gameState = 'playing';
         this.score = 0;
@@ -191,11 +195,18 @@ class ShotZombieGame {
 
         this.lastFrameTime = performance.now();
         this.updateUI();
+
+        console.log('🎮 Starting game loop...');
         this.gameLoop();
     }
 
     // ===== 初始化队列 =====
     initializeQueues() {
+        console.log('📋 Initializing queues...');
+        console.log('Bottom line:', this.bottomLine);
+        console.log('Zombie size:', this.zombieSize);
+        console.log('Queue spacing:', this.queueSpacing);
+
         this.zombieQueues = [[], [], []];
 
         // 每条栏位生成5只僵尸
@@ -209,10 +220,12 @@ class ShotZombieGame {
                 const zombie = new Zombie(col, y);
                 zombie.targetY = y;
                 this.zombieQueues[col].push(zombie);
+                console.log(`🧟 Created zombie: col=${col}, i=${i}, y=${y}, targetY=${zombie.targetY}`);
             }
         }
 
         console.log('✅ Initialized queues:', this.zombieQueues.map(q => q.length));
+        console.log('Total zombies:', this.zombieQueues.reduce((sum, q) => sum + q.length, 0));
     }
 
     restartGame() {
@@ -233,7 +246,10 @@ class ShotZombieGame {
 
     // ===== 主遊戲循環 =====
     gameLoop() {
-        if (this.gameState !== 'playing') return;
+        if (this.gameState !== 'playing') {
+            console.log('⚠️ Game loop stopped, state:', this.gameState);
+            return;
+        }
 
         const currentTime = performance.now();
         const deltaTime = (currentTime - this.lastFrameTime) / 1000; // convert to seconds
@@ -250,7 +266,11 @@ class ShotZombieGame {
         this.updateZombieAnimations(deltaTime);
 
         // 繪製畫面
-        this.draw();
+        try {
+            this.draw();
+        } catch (error) {
+            console.error('❌ Error in draw():', error);
+        }
 
         // 更新UI
         this.updateUI();
@@ -484,6 +504,10 @@ class ShotZombieGame {
         this.drawBottomLine();
 
         // 繪製殭屍
+        const totalZombies = this.zombieQueues.reduce((sum, q) => sum + q.length, 0);
+        if (totalZombies === 0) {
+            console.warn('⚠️ No zombies to draw!');
+        }
         this.drawZombies();
 
         // 標記最接近的殭屍
@@ -514,10 +538,12 @@ class ShotZombieGame {
     }
 
     drawZombies() {
+        let drawnCount = 0;
         this.zombieQueues.forEach((queue, colIndex) => {
             const x = (colIndex + 0.5) * this.columnWidth;
 
             queue.forEach(zombie => {
+                drawnCount++;
                 // 繪製殭屍
                 this.ctx.save();
                 this.ctx.translate(x, zombie.y);
@@ -553,6 +579,10 @@ class ShotZombieGame {
                 this.ctx.restore();
             });
         });
+
+        if (drawnCount === 0) {
+            console.warn('⚠️ drawZombies: No zombies were drawn!');
+        }
     }
 
     highlightNearestZombie() {
