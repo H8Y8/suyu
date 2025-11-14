@@ -24,7 +24,7 @@ class ShotZombieGame {
         this.timeLeft = 60; // seconds
         this.zombies = [];
         this.lastSpawnTime = 0;
-        this.spawnInterval = 700; // ms (faster spawn)
+        this.spawnInterval = 200; // ms (faster spawn)
         this.lastFrameTime = 0;
 
         // Canvas 設定
@@ -236,7 +236,7 @@ class ShotZombieGame {
     // ===== 殭屍生成 =====
     spawnZombie() {
         const columnIndex = Math.floor(Math.random() * this.columnCount);
-        const speed = 150 + Math.random() * 80; // 150-230 px/s (faster)
+        const speed = 500 + Math.random() * 80; // 150-230 px/s (faster)
         const zombie = new Zombie(columnIndex, 0, speed);
         this.zombies.push(zombie);
     }
