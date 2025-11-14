@@ -13,10 +13,21 @@ body {
 
 .game-info {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     color: white;
     font-size: 24px;
     margin-bottom: 20px;
+    background: rgba(255, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid rgba(255, 0, 0, 0.5);
+}
+
+.game-info > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
 }
 
 #game-area {
@@ -28,18 +39,55 @@ body {
     overflow: hidden;
 }
 
-.target {
+/* 僵尸样式 */
+.zombie {
     position: absolute;
-    width: 65px;
-    height: 65px;
-    cursor: pointer;
-    transition: all 0.1s ease;
+    width: 60px;
+    height: 60px;
+    cursor: crosshair;
+    z-index: 10;
+    animation: zombie-wobble 0.5s infinite;
 }
 
-.target img {
+.zombie img {
     width: 100%;
     height: 100%;
     border-radius: 50%;
+    border: 3px solid rgba(255, 0, 0, 0.5);
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+}
+
+.zombie:hover img {
+    border-color: rgba(255, 255, 0, 0.8);
+    box-shadow: 0 0 15px rgba(255, 255, 0, 0.8);
+}
+
+@keyframes zombie-wobble {
+    0%, 100% { transform: rotate(-2deg); }
+    50% { transform: rotate(2deg); }
+}
+
+/* 防线 */
+.base-line {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 5px;
+    height: 100%;
+    background: linear-gradient(to bottom,
+        transparent 0%,
+        rgba(255, 0, 0, 0.5) 20%,
+        rgba(255, 0, 0, 0.8) 50%,
+        rgba(255, 0, 0, 0.5) 80%,
+        transparent 100%);
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
+    z-index: 5;
+    animation: pulse-line 2s infinite;
+}
+
+@keyframes pulse-line {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
 }
 
 .leaderboard {
@@ -200,9 +248,14 @@ body {
         transition: all 0.3s ease;
     }
 
-    .target {
-        width: 60px;
-        height: 60px;
+    .zombie {
+        width: 55px;
+        height: 55px;
+    }
+
+    .game-info {
+        font-size: 16px;
+        padding: 10px;
     }
 
     .countdown-timer {
